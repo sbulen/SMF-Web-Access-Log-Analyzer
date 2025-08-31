@@ -204,7 +204,7 @@ function get_asns($min_ip_packed, $max_ip_packed) {
 	$min_disp = inet_ntop($min_ip_packed);
 	$max_hex = bin2hex($max_ip_packed);
 	$max_length = strlen($max_ip_packed);
-	$max_disp = bin2hex($max_ip_packed);
+	$max_disp = inet_ntop($max_ip_packed);
 
 	if ($db_type == 'postgresql')
 		$sql = 'SELECT ip_from_packed, ip_to_packed, asn FROM {db_prefix}wala_dbip_asn WHERE ip_to_packed >= \'' . $min_disp. '\' AND ip_from_packed <= \'' . $max_disp . '\' ORDER BY ip_from_packed';
@@ -250,7 +250,7 @@ function get_countries($min_ip_packed, $max_ip_packed) {
 	$min_disp = inet_ntop($min_ip_packed);
 	$max_hex = bin2hex($max_ip_packed);
 	$max_length = strlen($max_ip_packed);
-	$max_disp = bin2hex($max_ip_packed);
+	$max_disp = inet_ntop($max_ip_packed);
 
 	if ($db_type == 'postgresql')
 		$sql = 'SELECT ip_from_packed, ip_to_packed, country FROM {db_prefix}wala_dbip_country WHERE ip_to_packed >= \'' . $min_disp. '\' AND ip_from_packed <= \'' . $max_disp . '\' ORDER BY ip_from_packed';
@@ -485,7 +485,13 @@ function get_wala_members($offset, $limit) {
 		$sql = 'SELECT ip_packed, id_member FROM {db_prefix}wala_members ORDER BY LENGTH(ip_packed), ip_packed, id_member LIMIT ' . $limit . ' OFFSET ' .$offset;
 
 	$result = $smcFunc['db_query']('', $sql);
-	$all_rows = $smcFunc['db_fetch_all']($result);
+	$all_rows = array();
+	while ($row = $smcFunc['db_fetch_assoc']($result)) {
+		if ($db_type == 'postgresql') {
+			$row['ip_packed'] = inet_pton($row['ip_packed']);
+		}
+		$all_rows[] = $row;
+	}
 	return $all_rows;
 }
 
@@ -516,13 +522,19 @@ function get_web_access_log($offset, $limit) {
 
 	// pg properly sorts ip with ipv4 first, ipv6 next... mysql doesn't, and we don't want ipv6 & ipv4 all mixed together...
 	if ($db_type == 'postgresql')
-		$sql = 'SELECT ip_packed, id_entry FROM {db_prefix}wala_web_access_log ORDER BY ip_packed, id_entry LIMIT' . $limit . ' OFFSET ' .$offset;
+		$sql = 'SELECT ip_packed, id_entry FROM {db_prefix}wala_web_access_log ORDER BY ip_packed, id_entry LIMIT ' . $limit . ' OFFSET ' .$offset;
 	else
 		$sql = 'SELECT ip_packed, id_entry FROM {db_prefix}wala_web_access_log ORDER BY LENGTH(ip_packed), ip_packed, id_entry LIMIT ' . $limit . ' OFFSET ' .$offset;
 
 	$result = $smcFunc['db_query']('', $sql);
-	$all_rows = $smcFunc['db_fetch_all']($result);
-	return $all_rows;
+	$all_rows = array();
+	while ($row = $smcFunc['db_fetch_assoc']($result)) {
+		if ($db_type == 'postgresql') {
+			$row['ip_packed'] = inet_pton($row['ip_packed']);
+		}
+		$all_rows[] = $row;
+	}
+ 	return $all_rows;
 }
 
 /**

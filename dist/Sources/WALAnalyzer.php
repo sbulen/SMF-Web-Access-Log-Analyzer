@@ -646,9 +646,7 @@ function wala_members() {
 	$start = ($index - 1) * $commit_rec_count;
 	$inserts = array();
 	if (!$issues) {
-		$rows = get_smf_members($start, $commit_rec_count);
-		foreach ($rows AS $row)
-			$inserts[] = $row;
+		$inserts = get_smf_members($start, $commit_rec_count);
 		insert_members($inserts);
 		commit();
 	}
