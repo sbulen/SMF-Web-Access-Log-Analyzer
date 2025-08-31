@@ -1,0 +1,58 @@
+.wala_file_name {
+	display: inline-block;
+	padding: 0 0 0 5px;
+	width: 25%;
+}
+
+.wala_date {
+	display: inline-block;
+	padding: 0 0 0 5px;
+	width: 20%;
+}
+
+.wala_file_input {
+	display: inline-block;
+	padding: 0 0 0 5px;
+	width: 25%;
+}
+
+.wala_file_status {
+	display: inline-block;
+	padding: 0 0 0 5px;
+}
+
+.wala_file_wheel {
+	display: inline-block;
+	padding: 0;
+	visibility: hidden;
+}
+
+.wala_table {
+	display: table;
+	width: auto;
+	overflow: scroll;
+	table-layout:fixed;
+	border-collapse: collapse;
+	padding: 0px;
+	border: 1px solid;
+	text-align: left;
+	white-space: normal;
+	word-break: break-word;
+	font-weight: normal;
+	font-variant: normal;
+	color: inherit;
+}
+.wala_table_hdr {
+	display: table-header-group;
+	font-weight: bold;
+}
+.wala_row {
+	display: table-row;
+}
+.wala_cell {
+	display: table-cell;
+	border: 1px solid;
+	padding: 2px;
+	min-width: 80px;
+	max-width: 750px;
+}

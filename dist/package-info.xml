@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!DOCTYPE package-info SYSTEM "http://www.simplemachines.org/xml/package-info">
+<package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
+	<name>Web Access Log Analyzer</name>
+	<id>shawnb61:WALAnalyzer</id>
+	<version>0.3.2</version>
+	<type>modification</type>
+	<install for="2.1.6-2.1.99">
+		<readme type="file" parsebbc="true">readme.txt</readme> 
+		<require-dir name="Sources" destination="$boarddir"/>
+		<require-dir name="Themes" destination="$boarddir"/>
+		<require-dir name="cache" destination="$boarddir"/>
+		<database type="file">WALAnalyzerDBChanges.php</database>
+		<hook hook="integrate_pre_load" function="wala_preload" file="$sourcedir/WALAnalyzerHooks.php" />
+		<hook hook="integrate_simple_actions" function="wala_simple_actions" file="$sourcedir/WALAnalyzerHooks.php" />
+		<hook hook="integrate_XMLhttpMain_subActions" function="wala_XMLhttpMain_subActions" file="$sourcedir/WALAnalyzerHooks.php" />
+		<hook hook="integrate_admin_areas" function="wala_admin_menu" file="$sourcedir/WALAnalyzerHooks.php" />
+	</install>	
+	<uninstall for="2.1.6-2.1.99">
+		<hook hook="integrate_admin_areas" function="wala_admin_menu" file="$sourcedir/WALAnalyzerHooks.php" reverse="true" />
+		<hook hook="integrate_XMLhttpMain_subActions" function="wala_XMLhttpMain_subActions" file="$sourcedir/WALAnalyzerHooks.php" reverse="true" />
+		<hook hook="integrate_simple_actions" function="wala_simple_actions" file="$sourcedir/WALAnalyzerHooks.php" reverse="true" />
+		<hook hook="integrate_pre_load" function="wala_preload" file="$sourcedir/WALAnalyzerHooks.php" reverse="true" />
+		<remove-file name="$sourcedir/WALAnalyzer.php" />
+		<remove-file name="$sourcedir/WALAnalyzerHooks.php" />
+		<remove-file name="$sourcedir/WALAnalyzerModel.php" />
+		<remove-file name="$themedir/WALAnalyzerMaint.template.php" />
+		<remove-file name="$themedir/css/walanalyzer.css" />
+		<remove-file name="$themedir/scripts/wala_file_xfers.js" />
+		<remove-file name="$themedir/languages/WALAnalyzer.english.php" />
+		<remove-dir name="$boarddir/cache/wala" />
+	</uninstall>
+</package-info>
