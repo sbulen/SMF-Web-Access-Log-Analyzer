@@ -16,6 +16,7 @@ async function walaUpload(file_type) {
 	let one_tenth = Math.round(file.size/10);
 	wala_chunk_size = Math.min(one_tenth, wala_chunk_size);
 	const CHUNK_SIZE = wala_chunk_size;
+	const chunkct_regex = /OK (\d{1,10}) chunks/;
 
 	let start = 0;
 	let end = CHUNK_SIZE;
@@ -75,8 +76,6 @@ async function walaUpload(file_type) {
 		formData.append('name', file.name);
 		formData.append('total_chunks', totalChunks);
 		formData.append(smf_session_var, smf_session_id);
-
-		const chunkct_regex = /OK (\d{1,10}) chunks/;
 
 		try {
 			// Note xml must be passed in url here otherwise SMF will return a normal http template
@@ -166,6 +165,51 @@ async function walaUpload(file_type) {
 		}
 		index++;
 	}
+
+	// Update log attributes
+	index = 0;
+	totalChunks = 1;
+	document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_attribution;
+	if ((error_found === false) && (file_type === 'log')) {
+		while (index < totalChunks) {
+			const formData = new FormData();
+			formData.append('index', index);
+			formData.append(smf_session_var, smf_session_id);
+			try {
+				// Note xml must be passed otherwise SMF will return a normal http template
+				const response = await fetch(smf_scripturl + '?action=xmlhttp;sa=walalattr;xml', {
+					method: 'POST',
+					credentials: 'same-origin',
+					body: formData,
+				});
+				const result = await response.text();
+				if (response.ok) {
+					totalChunks = result.match(chunkct_regex)[1];
+					document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_attribution;
+				} else {
+					console.error(wala_str_failed);
+					new smc_Popup({
+						heading: wala_str_loader,
+						content: wala_str_failed,
+						icon_class: "main_icons error",
+					});
+					error_found = true;
+					break;
+				}
+			} catch (error) {
+				console.error(wala_str_failed + ': ', error);
+				new smc_Popup({
+					heading: wala_str_loader,
+					content: wala_str_failed,
+					icon_class: "main_icons error",
+				});
+				error_found = true;
+				break;
+			}
+			index++;
+		}
+	}
+
 	// Last but not least, hide the spinner...
 	if (error_found === false) {
 		new smc_Popup({
@@ -237,6 +281,51 @@ async function walaMemberSync() {
 			break;
 		}
 	}
+
+	// Update member attributes
+	index = 0;
+	totalChunks = 1;
+	document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_attribution;
+	if (error_found === false) {
+		while (index < totalChunks) {
+			const formData = new FormData();
+			formData.append('index', index);
+			formData.append(smf_session_var, smf_session_id);
+			try {
+				// Note xml must be passed otherwise SMF will return a normal http template
+				const response = await fetch(smf_scripturl + '?action=xmlhttp;sa=walamattr;xml', {
+					method: 'POST',
+					credentials: 'same-origin',
+					body: formData,
+				});
+				const result = await response.text();
+				if (response.ok) {
+					totalChunks = result.match(chunkct_regex)[1];
+					document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_attribution;
+				} else {
+					console.error(wala_str_failed);
+					new smc_Popup({
+						heading: wala_str_loader,
+						content: wala_str_failed,
+						icon_class: "main_icons error",
+					});
+					error_found = true;
+					break;
+				}
+			} catch (error) {
+				console.error(wala_str_failed + ': ', error);
+				new smc_Popup({
+					heading: wala_str_loader,
+					content: wala_str_failed,
+					icon_class: "main_icons error",
+				});
+				error_found = true;
+				break;
+			}
+			index++;
+		}
+	}
+
 	// Last but not least, hide the spinner...
 	if (error_found === false) {
 		new smc_Popup({

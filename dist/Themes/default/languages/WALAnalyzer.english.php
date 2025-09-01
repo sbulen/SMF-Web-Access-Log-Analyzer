@@ -27,6 +27,7 @@ $txt['wala_loader'] = 'Wala File Loader';
 $txt['wala_uploaded'] = '% uploaded';
 $txt['wala_prep'] = 'Preparing for import...';
 $txt['wala_imported'] = '% imported';
+$txt['wala_attribution'] = '% attribution';
 $txt['wala_done'] = 'Import complete!';
 $txt['wala_success'] = 'Success!';
 $txt['wala_failed'] = 'File upload backend failure; check SMF, PHP & Apache logs';

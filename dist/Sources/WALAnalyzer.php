@@ -144,6 +144,7 @@ function wala_load() {
 	addJavaScriptVar('wala_str_uploaded', $txt['wala_uploaded'], true);
 	addJavaScriptVar('wala_str_prep', $txt['wala_prep'], true);
 	addJavaScriptVar('wala_str_imported', $txt['wala_imported'], true);
+	addJavaScriptVar('wala_str_attribution', $txt['wala_attribution'], true);
 	addJavaScriptVar('wala_str_done', $txt['wala_done'], true);
 	addJavaScriptVar('wala_str_success', $txt['wala_success'], true);
 	addJavaScriptVar('wala_str_failed', $txt['wala_failed'], true);
@@ -288,6 +289,7 @@ function wala_reports() {
 
 /**
  * WALA chunk respose - subaction for uploaded file chunk.
+ * Used when loading dbip_asn, dbip_country & the access log.
  * Load the file chunk sent by the fetch api.
  *
  * Action: xmlhttp
@@ -364,6 +366,7 @@ function wala_chunk() {
 
 /**
  * WALA_prep - subaction to combine the gz chunks, decompress & prep new csv chunks for import.
+ * Used when loading dbip_asn, dbip_country & the access log.
  *
  * Action: xmlhttp
  * Subaction: walaprep
@@ -489,6 +492,7 @@ function wala_prep() {
 
 /**
  * WALA_import - subaction to combine the chunks & prep csv chunks for import.
+ * Used when loading dbip_asn, dbip_country & the access log.
  *
  * Action: xmlhttp
  * Subaction: walaimport
@@ -580,8 +584,6 @@ function wala_import() {
 		elseif ($file_type === 'country')
 			update_status('country', $file_name, time());
 		elseif ($file_type === 'log') {
-			// Also load log attributes...
-			update_log_attributes();
 			update_status('log', $file_name, time());
 		}
 	}
@@ -599,6 +601,7 @@ function wala_import() {
 
 /**
  * WALA_members - subaction to load member reporting table from smf member table in chunks.
+ * Used to load smf_members table to the wala_members table, to assign asn & country & also cache a few other attributes.
  *
  * Action: xmlhttp
  * Subaction: walamemb
@@ -653,7 +656,6 @@ function wala_members() {
 
 	// If we're done, update the file status info...
 	if (!$issues && ($index ==	$chunkct)) {
-		update_member_attributes();
 		update_status('member', '---', time());
 		commit();
 	}
@@ -667,6 +669,144 @@ function wala_members() {
 	}
 	else
 		$context['xml_data'][] = array('value' => 'OK ' . $chunkct . ' chunks');
+}
+
+/**
+ * WALA_member_attr - load attributes to the newly loaded member file.
+ * Used when loading the web_access_log table, to assign asn, country & member attributes.
+ *
+ * Action: xmlhttp
+ * Subaction: walamattr
+ *
+ * @return null
+ *
+ */
+function wala_memb_attr() {
+
+    global $context, $sourcedir;
+
+	// Make sure it's OK they're here...
+	checkSession();
+
+	// If file system or post issues encountered, return a 500
+	$issues = false;
+
+	$index = 0;
+	if (isset($_POST['index']) && is_numeric($_POST['index']))
+		$index = (int) $_POST['index'];
+	else
+		$issues = true;
+
+	// Gonna need this...
+	require_once($sourcedir . '/WALAnalyzerModel.php');
+
+	if (!$issues) {
+		// How many chunks total?  Not too big...
+		// Even a small chunk of users, sorted by IP, can retrieve a large # of asn/country rows
+		// Needed for these lookups...
+		$reccount = count_smf_members();
+		$commit_rec_count = ceil($reccount/20);
+		if ($commit_rec_count > 20000)
+			$commit_rec_count = 20000;
+		$chunkct = ceil($reccount/$commit_rec_count);
+
+		$offset = $index * $commit_rec_count;
+		$limit = $commit_rec_count;
+		$members = get_wala_members($offset, $limit);
+		$ips = array_column($members, 'ip_packed');
+		$min_ip_packed = min($ips);
+		$max_ip_packed = max($ips);
+		load_asn_cache($min_ip_packed, $max_ip_packed);
+		load_country_cache($min_ip_packed, $max_ip_packed);
+		start_transaction();
+		foreach ($members AS $member_info) {
+			$member_info['asn'] = get_asn($member_info['ip_packed']);
+			$member_info['country'] = get_country($member_info['ip_packed']);
+			update_wala_members($member_info);
+		}
+		commit();
+	}
+
+	// For a simple generic yes/no response
+	$context['sub_template'] = 'generic_xml';
+
+	if ($issues) {
+		$context['xml_data'][] = array('value' => 'FAILURE');
+		send_http_status(500);
+	}
+	else
+		$context['xml_data'][] = array('value' => 'OK ' . $chunkct . ' chunks');
+}
+
+/**
+ * WALA_log_attr - load attributes to the newly loaded log file
+ * Looking up by IP, load ASN, Country & member.
+ *
+ * Action: xmlhttp
+ * Subaction: walalattr
+ *
+ * @return null
+ *
+ */
+function wala_log_attr() {
+
+    global $context, $sourcedir;
+
+	// Make sure it's OK they're here...
+	checkSession();
+
+	// If file system or post issues encountered, return a 500
+	$issues = false;
+
+	$index = 0;
+	if (isset($_POST['index']) && is_numeric($_POST['index']))
+		$index = (int) $_POST['index'];
+	else
+		$issues = true;
+
+	// Gonna need this...
+	require_once($sourcedir . '/WALAnalyzerModel.php');
+
+	if (!$issues) {
+		// How many chunks total?  Not too big...
+		// Even a small chunk of users, sorted by IP, can retrieve a large # of asn/country rows
+		// Needed for these lookups...
+		$reccount = count_web_access_log();
+		$commit_rec_count = ceil($reccount/20);
+		if ($commit_rec_count > 20000)
+			$commit_rec_count = 20000;
+		$chunkct = ceil($reccount/$commit_rec_count);
+
+		$offset = $index * $commit_rec_count;
+		$limit = $commit_rec_count;
+		$log = get_web_access_log($offset, $limit);
+		$ips = array_column($log, 'ip_packed');
+		$min_ip_packed = min($ips);
+		$max_ip_packed = max($ips);
+		load_asn_cache($min_ip_packed, $max_ip_packed);
+		load_country_cache($min_ip_packed, $max_ip_packed);
+		load_member_cache($min_ip_packed, $max_ip_packed);
+		start_transaction();
+		foreach ($log AS $entry_info) {
+			$entry_info['asn'] = get_asn($entry_info['ip_packed']);
+			$entry_info['country'] = get_country($entry_info['ip_packed']);
+			$entry_info['username'] = get_username($entry_info['ip_packed']);
+			update_web_access_log($entry_info);
+		}
+		commit();
+	}
+
+	// For a simple generic yes/no response
+	$context['sub_template'] = 'generic_xml';
+
+	if ($issues) {
+		$context['xml_data'][] = array('value' => 'FAILURE');
+		send_http_status(500);
+	}
+	else
+		$context['xml_data'][] = array('value' => 'OK ' . $chunkct . ' chunks');
+
+
 }
 
 /**
@@ -836,7 +976,16 @@ function load_asn_cache($min_ip_packed, $max_ip_packed) {
 		$asn_cache[bin2hex($asn['ip_to_packed'])] = $temp;
 }
 
-// Lookup asn via simple btree...
+/**
+ * get_asn - look up the ASN from the cache
+ *
+ * Action: na - helper function
+ *
+ * @params inet $ip_packed
+ *
+ * @return string $asn
+ *
+ */
 function get_asn($ip_packed) {
 	global $asn_cache;
 
@@ -891,7 +1040,16 @@ function load_country_cache($min_ip_packed, $max_ip_packed) {
 		$country_cache[bin2hex($country['ip_to_packed'])] = $temp;
 }
 
-// Lookup country via simple btree...
+/**
+ * get_country - look up the country from the cache
+ *
+ * Action: na - helper function
+ *
+ * @params inet $ip_packed
+ *
+ * @return string $country
+ *
+ */
 function get_country($ip_packed) {
 	global $country_cache;
 
@@ -933,8 +1091,17 @@ function load_member_cache($min_ip_packed, $max_ip_packed) {
 	}
 }
 
-// Match smf_members by IP...  Imperfect, but close enough...
-// Helper function to make web access log contents more user friendly...
+/**
+ * get_username - look up the username from the member cache
+ * Match smf_members by IP...  Imperfect, but close enough...
+ *
+ * Action: na - helper function
+ *
+ * @params inet $ip_packed
+ *
+ * @return string $username
+ *
+ */
 function get_username($ip_packed) {
 	global $member_cache;
 
@@ -947,8 +1114,16 @@ function get_username($ip_packed) {
 	return $name;
 }
 
-// Get a simpler easy to use one...
-// Helper function to make web access log contents more user friendly...
+/**
+ * get_request_type - simplify the request type for easy reporting
+ *
+ * Action: na - helper function
+ *
+ * @params string $request (from web access log)
+ *
+ * @return string $request_type
+ *
+ */
 function get_request_type($request) {
 	if (stripos($request, 'area=alerts_popup') !== false)
 		$request_type = 'Alerts';
@@ -1038,8 +1213,16 @@ function get_request_type($request) {
 	return $request_type;
 }
 
-// Get a simpler easy to use one...
-// Helper function to make web access log contents more user friendly...
+/**
+ * get_agent - simplify the agent for easy reporting
+ *
+ * Action: na - helper function
+ *
+ * @params string $useragent (from web access log)
+ *
+ * @return string $agent
+ *
+ */
 function get_agent($useragent) {
 	if ($useragent === '-')
 		$agent = 'BLANK';
@@ -1193,96 +1376,36 @@ function get_agent($useragent) {
 	return $agent;
 }
 
-// Try to parse browser & version from useragent...
-// Helper function to make web access log contents more user friendly...
-function get_browser_ver($request) {
+/**
+ * get_browser_ver - simplify the browser version for easy reporting
+ *
+ * Action: na - helper function
+ *
+ * @params string $useragent (from web access log)
+ *
+ * @return string $browser_ver
+ *
+ */
+function get_browser_ver($useragent) {
 	$browser_ver = '';
 	$matches = array();
 
 	// Gets most browser versions here...
 	static $pattern1 = '~(?:firefox|chrome|msie|safari|edg|edga|edgios|opera|vivaldi)\/\d{1,3}\b~i';
-	if (preg_match($pattern1, $request, $matches))
+	if (preg_match($pattern1, $useragent, $matches))
 		$browser_ver = $matches[0];
 
 	// Second swipe at it, lots of iphones use this
 	static $pattern2 = '~(?:mobile)\/\d\d[a-z]\d\d\d\b~i';
 	if (empty($browser_ver))
-		if (preg_match($pattern2, $request, $matches))
+		if (preg_match($pattern2, $useragent, $matches))
 			$browser_ver = $matches[0];
 
 	// Third swipe at it, lots of iphones use this long version of a safari version
 	static $pattern3 = '~(?:safari)\/\d{4,5}\b~i';
 	if (empty($browser_ver))
-		if (preg_match($pattern3, $request, $matches))
+		if (preg_match($pattern3, $useragent, $matches))
 			$browser_ver = $matches[0];
 
 	return $browser_ver;
-}
-
-// Run thru members in IP order & set attributes
-function update_member_attributes() {
-
-	global $asn_cache, $country_cache;
-
-	// How many chunks total?  Not too big...
-	// Even a small chunk of users, sorted by IP, can retrieve a large # of asn/country rows
-	// Needed for these lookups...
-	$reccount = count_smf_members();
-	$commit_rec_count = ceil($reccount/20);
-	if ($commit_rec_count > 20000)
-		$commit_rec_count = 20000;
-
-	$offset = 0;
-	$limit = $commit_rec_count;
-	while ($offset < $reccount) {
-		$members = get_wala_members($offset, $limit);
-		$ips = array_column($members, 'ip_packed');
-		$min_ip_packed = min($ips);
-		$max_ip_packed = max($ips);
-		load_asn_cache($min_ip_packed, $max_ip_packed);
-		load_country_cache($min_ip_packed, $max_ip_packed);
-		start_transaction();
-		foreach ($members AS $member_info) {
-			$member_info['asn'] = get_asn($member_info['ip_packed']);
-			$member_info['country'] = get_country($member_info['ip_packed']);
-			update_wala_members($member_info);
-		}
-		commit();
-		$offset += $limit;
-	}
-}
-
-// Run thru members in IP order & set attributes
-function update_log_attributes() {
-
-	global $asn_cache, $country_cache;
-
-	// How many chunks total?  Not too big...
-	// Even a small chunk of users, sorted by IP, can retrieve a large # of asn/country rows
-	// Needed for these lookups...
-	$reccount = count_web_access_log();
-	$commit_rec_count = ceil($reccount/20);
-	if ($commit_rec_count > 20000)
-		$commit_rec_count = 20000;
-
-	$offset = 0;
-	$limit = $commit_rec_count;
-	while ($offset < $reccount) {
-		$log = get_web_access_log($offset, $limit);
-		$ips = array_column($log, 'ip_packed');
-		$min_ip_packed = min($ips);
-		$max_ip_packed = max($ips);
-		load_asn_cache($min_ip_packed, $max_ip_packed);
-		load_country_cache($min_ip_packed, $max_ip_packed);
-		load_member_cache($min_ip_packed, $max_ip_packed);
-		start_transaction();
-		foreach ($log AS $entry_info) {
-			$entry_info['asn'] = get_asn($entry_info['ip_packed']);
-			$entry_info['country'] = get_country($entry_info['ip_packed']);
-			$entry_info['username'] = get_username($entry_info['ip_packed']);
-			update_web_access_log($entry_info);
-		}
-		commit();
-		$offset += $limit;
-	}
 }

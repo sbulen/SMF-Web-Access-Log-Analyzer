@@ -73,6 +73,8 @@ function wala_simple_actions(&$simpleActions, &$simpleAreas, &$simpleSubActions,
 	$xmlActions[] = 'walaprep';
 	$xmlActions[] = 'walaimport';
 	$xmlActions[] = 'walamemb';
+	$xmlActions[] = 'walamattr';
+	$xmlActions[] = 'walalattr';
 }
 
 /**
@@ -91,6 +93,8 @@ function wala_XMLhttpMain_subActions(&$subaction_array)
 	$subaction_array['walaprep'] = 'wala_prep';
 	$subaction_array['walaimport'] = 'wala_import';
 	$subaction_array['walamemb'] = 'wala_members';
+	$subaction_array['walamattr'] = 'wala_memb_attr';
+	$subaction_array['walalattr'] = 'wala_log_attr';
 }
 
 /**
