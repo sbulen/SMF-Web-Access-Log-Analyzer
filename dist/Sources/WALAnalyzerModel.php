@@ -449,6 +449,7 @@ function update_status($file_type, $file_name = '', $last_proc_time = 0) {
 
 /**
  * wala_report_request
+ * Does some simple xlation of MySQL syntax to Postgresql
  *
  * @params string sql
  *
@@ -456,10 +457,16 @@ function update_status($file_type, $file_name = '', $last_proc_time = 0) {
  *
  */
 function wala_report_request($sql = '') {
-	global $smcFunc;
+	global $smcFunc, $db_type;
 
 	if (empty($sql))
 		return array();
+
+	if ($db_type == 'postgresql')
+		$sql = strtr($sql, array(
+				'FROM_UNIXTIME' => 'TO_TIMESTAMP',
+			)
+		);
 
 	$result = $smcFunc['db_query']('', $sql);
 	$all_rows = $smcFunc['db_fetch_all']($result);

@@ -3,7 +3,7 @@
 <package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
 	<name>Web Access Log Analyzer</name>
 	<id>shawnb61:WALAnalyzer</id>
-	<version>0.4.1</version>
+	<version>0.4.2</version>
 	<type>modification</type>
 	<install for="2.1.6-2.1.99">
 		<readme type="file" parsebbc="true">readme.txt</readme> 

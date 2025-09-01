@@ -183,22 +183,23 @@ function wala_reports() {
 	isAllowedTo('admin_forum');
 
 	// Array with available reports
+	// Note some specific mysql syntax is xlated to pg later (e.g., from_unixtime())
 	$context['wala_reports'] = array(
 		'wala_rpt_ureqsxcountryui' => array(
 			'hdr' => array('requests', 'country', 'user count', 'last login'),
-			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, country FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY country), memtots AS (SELECT COUNT(*) AS user_count, MAX(login) AS last_user_login, country FROM {db_prefix}wala_members GROUP BY country)  SELECT waltots.requests, waltots.country, COALESCE(memtots.user_count, 0) AS user_count, COALESCE(memtots.last_user_login, \'\') AS  last_user_login FROM waltots LEFT JOIN memtots ON (waltots.country = memtots.country) ORDER BY waltots.requests DESC LIMIT 500',
+			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, country FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY country), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, country FROM {db_prefix}wala_members GROUP BY country)  SELECT waltots.requests, waltots.country, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots LEFT JOIN memtots ON (waltots.country = memtots.country) ORDER BY waltots.requests DESC LIMIT 500',
 		),
 		'wala_rpt_areqsxcountryui' => array(
 			'hdr' => array('requests', 'country', 'user count', 'last login'),
-			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, country FROM {db_prefix}wala_web_access_log GROUP BY country), memtots AS (SELECT COUNT(*) AS user_count, MAX(login) AS last_user_login, country FROM {db_prefix}wala_members GROUP BY country) SELECT waltots.requests, waltots.country, COALESCE(memtots.user_count, 0) AS user_count, COALESCE(memtots.last_user_login, \'\') AS last_user_login FROM waltots LEFT JOIN memtots ON (waltots.country = memtots.country) ORDER BY waltots.requests DESC LIMIT 500',
+			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, country FROM {db_prefix}wala_web_access_log GROUP BY country), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, country FROM {db_prefix}wala_members GROUP BY country) SELECT waltots.requests, waltots.country, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots LEFT JOIN memtots ON (waltots.country = memtots.country) ORDER BY waltots.requests DESC LIMIT 500',
 		),
 		'wala_rpt_ureqsxasnui' => array(
 			'hdr' => array('requests', 'asn', 'asn name', 'user count', 'last login'),
-			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, asn FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY asn), memtots AS (SELECT COUNT(*) AS user_count, MAX(login) AS last_user_login, asn FROM {db_prefix}wala_members GROUP BY asn) SELECT waltots.requests, waltots.asn, a.asn_name, COALESCE(memtots.user_count, 0) AS user_count, COALESCE(memtots.last_user_login, \'\') AS last_user_login FROM waltots INNER JOIN {db_prefix}wala_asns a ON (waltots.asn = a.asn) LEFT JOIN memtots ON (waltots.asn = memtots.asn) ORDER BY waltots.requests DESC LIMIT 500',
+			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, asn FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY asn), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, asn FROM {db_prefix}wala_members GROUP BY asn) SELECT waltots.requests, waltots.asn, a.asn_name, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots INNER JOIN {db_prefix}wala_asns a ON (waltots.asn = a.asn) LEFT JOIN memtots ON (waltots.asn = memtots.asn) ORDER BY waltots.requests DESC LIMIT 500',
 		),
 		'wala_rpt_areqsxasnui' => array(
 			'hdr' => array('requests', 'asn', 'asn name', 'user count', 'last login'),
-			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, asn FROM {db_prefix}wala_web_access_log GROUP BY asn), memtots AS (SELECT COUNT(*) AS user_count, MAX(login) AS last_user_login, asn FROM {db_prefix}wala_members GROUP BY asn) SELECT waltots.requests, waltots.asn, a.asn_name, COALESCE(memtots.user_count, 0) AS user_count, COALESCE(memtots.last_user_login, \'\') AS last_user_login FROM waltots INNER JOIN {db_prefix}wala_asns a ON (waltots.asn = a.asn) LEFT JOIN memtots ON (waltots.asn = memtots.asn) ORDER BY waltots.requests DESC LIMIT 500',
+			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, asn FROM {db_prefix}wala_web_access_log GROUP BY asn), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, asn FROM {db_prefix}wala_members GROUP BY asn) SELECT waltots.requests, waltots.asn, a.asn_name, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots INNER JOIN {db_prefix}wala_asns a ON (waltots.asn = a.asn) LEFT JOIN memtots ON (waltots.asn = memtots.asn) ORDER BY waltots.requests DESC LIMIT 500',
 		),
 		'wala_rpt_ureqsxagent' => array(
 			'hdr' => array('agent', 'requests'),
@@ -921,7 +922,7 @@ function wala_load_log($filename = '') {
 			$buffer[1],								// client (usually unused)
 			$buffer[2],								// requestor (usually unused)
 			substr($buffer[3], 1),					// date timestamp, strip the [
-			substr($buffer[4], 1, 4),				// tz, strip the - & ]
+			substr($buffer[4], 1, -1),				// tz, strip the - & ]
 			$buffer[5],								// request
 			(int) $buffer[6],						// status
 			(int) $buffer[7],						// size

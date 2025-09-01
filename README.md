@@ -9,7 +9,7 @@ Twenty standard reports are provided.  The database is simple enough that you ca
 
 Although it would be best to perform this analysis on a test copy of your forum, if one is not available, it is safe to run directly against your production site.
 
-The first nine columns of the apache web access logs usually conform to the Apache Combined Log format (https://httpd.apache.org/docs/2.4/logs.html).  This tool only works if the first nine fields in the log match this format.  
+The first nine columns of the apache web access logs usually conform to the Apache Combined Log format (https://httpd.apache.org/docs/2.4/logs.html).  This tool only works if the first nine fields in the log match this format, and that they are in English (e.g., 'Aug').
 
 ***You should confirm your web access logs are in this format before installing this tool.***
 
@@ -34,4 +34,4 @@ This tool also requires use of two free databases, the DBIP lite databases, foun
  - DBIP ASN & Country lite lookups only.
  - The free versions of the DBIP databases are not kept as current & as detailed as the paid versions, of course...  They're a little old, and a little gappy, but acceptable for high-level analytics.
  - Member attribution, provider ASN and country, is not updated real-time into SMF.  This is meant to be an offline reporting tool, refreshed when a new analysis is needed.
- - It is ***STRONGLY*** recommended you do the loads & reporting on a desktop computer.  It kinda sorta works on mobile.  But only kinda sorta...
+ - It is recommended you do the loads & reporting on a desktop computer.  It kinda sorta works on mobile.  But only kinda sorta...
