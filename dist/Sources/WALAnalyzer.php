@@ -674,7 +674,7 @@ function wala_members() {
 
 /**
  * WALA_member_attr - load attributes to the newly loaded member file.
- * Used when loading the web_access_log table, to assign asn, country & member attributes.
+ * Looking up by IP, load ASN & Country.
  *
  * Action: xmlhttp
  * Subaction: walamattr
@@ -704,7 +704,6 @@ function wala_memb_attr() {
 	if (!$issues) {
 		// How many chunks total?  Not too big...
 		// Even a small chunk of users, sorted by IP, can retrieve a large # of asn/country rows
-		// Needed for these lookups...
 		$reccount = count_smf_members();
 		$commit_rec_count = ceil($reccount/20);
 		if ($commit_rec_count > 20000)
@@ -771,7 +770,6 @@ function wala_log_attr() {
 	if (!$issues) {
 		// How many chunks total?  Not too big...
 		// Even a small chunk of users, sorted by IP, can retrieve a large # of asn/country rows
-		// Needed for these lookups...
 		$reccount = count_web_access_log();
 		$commit_rec_count = ceil($reccount/20);
 		if ($commit_rec_count > 20000)
