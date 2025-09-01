@@ -832,18 +832,12 @@ function wala_load_asn($filename = '') {
 		if (!filter_var($buffer[0], FILTER_VALIDATE_IP) || !filter_var($buffer[1], FILTER_VALIDATE_IP) || !is_numeric($buffer[2]) || !is_string($buffer[3]))
 			return true;
 
-		// Set ipv6 flag...
-		$ipv6 = 0;
-		if (filter_var($buffer[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
-			$ipv6 = 1;
-
 		// Note SMF deals with the inet_pton() for type inet, so just pass ip display format here...
 		$inserts[] = array(
 			$buffer[0],
 			$buffer[1],
 			$buffer[0],
 			$buffer[1],
-			$ipv6,
 			$buffer[2],
 			$buffer[3],
 		);
@@ -875,18 +869,12 @@ function wala_load_country($filename = '') {
 		if (!filter_var($buffer[0], FILTER_VALIDATE_IP) || !filter_var($buffer[1], FILTER_VALIDATE_IP) || !is_string($buffer[2]))
 			return true;
 
-		// Set ipv6 flag...
-		$ipv6 = 0;
-		if (filter_var($buffer[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
-			$ipv6 = 1;
-
 		// Note SMF deals with the inet_pton() for type inet, so just pass ip display format here...
 		$inserts[] = array(
 			$buffer[0],
 			$buffer[1],
 			$buffer[0],
 			$buffer[1],
-			$ipv6,
 			$buffer[2],
 		);
 		$buffer = @fgetcsv($fp, null, ",", "\"", "\\");
@@ -912,17 +900,16 @@ function wala_load_log($filename = '') {
 	$inserts = array();
 
 	while ($buffer !== false) {
-		// Set ipv6 flag...
-		$ipv6 = 0;
-		if (filter_var($buffer[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
-			$ipv6 = 1;
+		// datetime, in apache common log format
+		$dt_string = substr($buffer[3] . $buffer[4], 1, -1);
+		$dti = DateTimeImmutable::createFromFormat('d/M/Y:H:i:s P', $dt_string);
 		$inserts[] = array(
 			// The first fields are common when the apache standard logfile is used; ignore the others in the csv, as they vary a lot
 			$buffer[0],								// ip packed
 			$buffer[1],								// client (usually unused)
 			$buffer[2],								// requestor (usually unused)
 			substr($buffer[3], 1),					// date timestamp, strip the [
-			substr($buffer[4], 1, -1),				// tz, strip the - & ]
+			substr($buffer[4], 0, -1),				// tz, strip the ]
 			$buffer[5],								// request
 			(int) $buffer[6],						// status
 			(int) $buffer[7],						// size
@@ -933,8 +920,7 @@ function wala_load_log($filename = '') {
 			get_request_type($buffer[5]),			// request_type
 			get_agent($buffer[9]),					// agent
 			get_browser_ver($buffer[9]),			// browser version
-			substr($buffer[3], 1, 11),				// date
-			(int ) substr($buffer[3], 13, 2),		// hour
+			$dti->getTimestamp(),					// dt in unix epoch format
 		);
 		$buffer = fgetcsv($fp, null, " ", "\"", "\\");
 	}

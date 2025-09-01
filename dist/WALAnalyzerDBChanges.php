@@ -83,12 +83,6 @@ $create_tables = array(
 				'not_null' => true,
 			),
 			array(
-				'name' => 'ipv6',
-				'type' => 'tinyint',
-				'default' => 0,
-				'not_null' => true,
-			),
-			array(
 				'name' => 'asn',
 				'type' => 'varchar',
 				'size' => 10,
@@ -136,12 +130,6 @@ $create_tables = array(
 				'type' => 'varchar',
 				'size' => 42,
 				'default' => '',
-				'not_null' => true,
-			),
-			array(
-				'name' => 'ipv6',
-				'type' => 'tinyint',
-				'default' => 0,
 				'not_null' => true,
 			),
 			array(
@@ -213,20 +201,6 @@ $create_tables = array(
 				'type' => 'int',
 				'unsigned' => true,
 				'default' => 0,
-				'not_null' => true,
-			),
-			array(
-				'name' => 'reg',
-				'type' => 'varchar',
-				'size' => 25,
-				'default' => '',
-				'not_null' => true,
-			),
-			array(
-				'name' => 'login',
-				'type' => 'varchar',
-				'size' => 25,
-				'default' => '',
 				'not_null' => true,
 			),
 			array(
@@ -356,15 +330,9 @@ $create_tables = array(
 				'not_null' => true,
 			),
 			array(
-				'name' => 'date',
-				'type' => 'varchar',
-				'size' => 11,
-				'default' => '',
-				'not_null' => true,
-			),
-			array(
-				'name' => 'hour',
-				'type' => 'tinyint',
+				'name' => 'datetime',
+				'type' => 'int',
+				'unsigned' => true,
 				'default' => 0,
 				'not_null' => true,
 			),

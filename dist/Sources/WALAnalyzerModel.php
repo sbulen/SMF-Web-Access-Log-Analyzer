@@ -141,7 +141,7 @@ function insert_dbip_asn(&$inserts) {
 
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}wala_dbip_asn',
-		array('ip_from_packed' => 'inet', 'ip_to_packed' => 'inet', 'ip_from' => 'string-42', 'ip_to' => 'string-42', 'ipv6' => 'int', 'asn' => 'string-10', 'asn_name' => 'string-255'),
+		array('ip_from_packed' => 'inet', 'ip_to_packed' => 'inet', 'ip_from' => 'string-42', 'ip_to' => 'string-42', 'asn' => 'string-10', 'asn_name' => 'string-255'),
 		$inserts,
 		array('ip_to_packed'),
 	);
@@ -161,7 +161,7 @@ function insert_dbip_country(&$inserts) {
 
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}wala_dbip_country',
-		array('ip_from_packed' => 'inet', 'ip_to_packed' => 'inet', 'ip_from' => 'string-42', 'ip_to' => 'string-42', 'ipv6' => 'int', 'country' => 'string-2'),
+		array('ip_from_packed' => 'inet', 'ip_to_packed' => 'inet', 'ip_from' => 'string-42', 'ip_to' => 'string-42', 'country' => 'string-2'),
 		$inserts,
 		array('ip_to_packed'),
 	);
@@ -181,7 +181,7 @@ function insert_log(&$inserts) {
 
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}wala_web_access_log',
-		array('ip_packed' => 'inet', 'client' => 'string-10', 'requestor' => 'string-10', 'raw_datetime' => 'string-32', 'raw_tz' => 'string-6', 'request' => 'string-255', 'status' => 'int', 'size' => 'int', 'referrer' => 'string-255', 'useragent' => 'string-255', 'ip_disp' => 'string-42', 'request_type' => 'string-15', 'agent' => 'string-25', 'browser_ver' => 'string-25', 'date' => 'string-11', 'hour' => 'int'),
+		array('ip_packed' => 'inet', 'client' => 'string-10', 'requestor' => 'string-10', 'raw_datetime' => 'string-32', 'raw_tz' => 'string-6', 'request' => 'string-255', 'status' => 'int', 'size' => 'int', 'referrer' => 'string-255', 'useragent' => 'string-255', 'ip_disp' => 'string-42', 'request_type' => 'string-15', 'agent' => 'string-25', 'browser_ver' => 'string-25', 'datetime' => 'int'),
 		$inserts,
 		array('id_entry'),
 	);
@@ -321,7 +321,7 @@ function count_web_access_log() {
 function get_smf_members($offset = 0, $limit = 50000) {
 	global $smcFunc, $db_type;
 
-	$result = $smcFunc['db_query']('', 'SELECT member_ip, id_member, real_name, is_activated , posts, total_time_logged_in, date_registered, last_login, from_unixtime(date_registered) AS reg, from_unixtime(last_login) AS login FROM {db_prefix}members ORDER BY id_member ASC LIMIT ' . $limit . ' OFFSET ' . $offset);
+	$result = $smcFunc['db_query']('', 'SELECT member_ip, id_member, real_name, is_activated , posts, total_time_logged_in, date_registered, last_login FROM {db_prefix}members ORDER BY id_member ASC LIMIT ' . $limit . ' OFFSET ' . $offset);
 
 	// Under SMF, PG & MySQL behave differently with inet types.  MySQL reads binary, but wants a display upon insert.  
 	// PG always reads & writes display.
@@ -352,7 +352,7 @@ function insert_members(&$inserts) {
 
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}wala_members',
-		array('ip_packed' => 'inet', 'id_member' => 'int', 'real_name' => 'string-255', 'is_activated' => 'int', 'posts' => 'int', 'total_time_logged_in' => 'int', 'date_registered' => 'int', 'last_login' => 'int', 'reg' => 'string-25', 'login' => 'string-25'),
+		array('ip_packed' => 'inet', 'id_member' => 'int', 'real_name' => 'string-255', 'is_activated' => 'int', 'posts' => 'int', 'total_time_logged_in' => 'int', 'date_registered' => 'int', 'last_login' => 'int'),
 		$inserts,
 		array('id_member'),
 	);
