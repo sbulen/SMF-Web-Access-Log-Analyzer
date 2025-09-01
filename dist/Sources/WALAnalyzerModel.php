@@ -214,7 +214,7 @@ function get_asns($min_ip_packed, $max_ip_packed) {
 		}
 		else {
 			// mixed ipv4 & ipv6
-			$sql = 'SELECT ip_from_packed, ip_to_packed, asn FROM {db_prefix}wala_dbip_asn WHERE (ip_to_packed >= UNHEX(\'' . $min_hex . '\') && (LENGTH(ip_from_packed) = ' . $min_length. ')) OR (ip_from_packed <=  UNHEX(\'' . $max_hex . '\') && (LENGTH(ip_to_packed) = ' . $max_length . '))) ORDER BY LENGTH(ip_from_packed), ip_from_packed';
+			$sql = 'SELECT ip_from_packed, ip_to_packed, asn FROM {db_prefix}wala_dbip_asn WHERE (ip_to_packed >= UNHEX(\'' . $min_hex . '\') && (LENGTH(ip_from_packed) = ' . $min_length. ')) OR (ip_from_packed <=  UNHEX(\'' . $max_hex . '\') && (LENGTH(ip_to_packed) = ' . $max_length . ')) ORDER BY LENGTH(ip_from_packed), ip_from_packed';
 		}
 	}
 	$result = $smcFunc['db_query']('', $sql);
@@ -260,7 +260,7 @@ function get_countries($min_ip_packed, $max_ip_packed) {
 		}
 		else {
 			// mixed ipv4 & ipv6
-			$sql = 'SELECT ip_from_packed, ip_to_packed, country FROM {db_prefix}wala_dbip_country WHERE (ip_to_packed >= UNHEX(\'' . $min_hex . '\') && (LENGTH(ip_from_packed) = ' . $min_length. ')) OR (ip_from_packed <=  UNHEX(\'' . $max_hex . '\') && (LENGTH(ip_to_packed) = ' . $max_length . '))) ORDER BY LENGTH(ip_from_packed), ip_from_packed';
+			$sql = 'SELECT ip_from_packed, ip_to_packed, country FROM {db_prefix}wala_dbip_country WHERE (ip_to_packed >= UNHEX(\'' . $min_hex . '\') && (LENGTH(ip_from_packed) = ' . $min_length. ')) OR (ip_from_packed <=  UNHEX(\'' . $max_hex . '\') && (LENGTH(ip_to_packed) = ' . $max_length . ')) ORDER BY LENGTH(ip_from_packed), ip_from_packed';
 		}
 	}
 	$result = $smcFunc['db_query']('', $sql);

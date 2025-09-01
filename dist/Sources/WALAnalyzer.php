@@ -713,9 +713,8 @@ function wala_memb_attr() {
 		$offset = $index * $commit_rec_count;
 		$limit = $commit_rec_count;
 		$members = get_wala_members($offset, $limit);
-		$ips = array_column($members, 'ip_packed');
-		$min_ip_packed = min($ips);
-		$max_ip_packed = max($ips);
+		$min_ip_packed = $members[0]['ip_packed'];
+		$max_ip_packed = end($members)['ip_packed'];
 		load_asn_cache($min_ip_packed, $max_ip_packed);
 		load_country_cache($min_ip_packed, $max_ip_packed);
 		start_transaction();
@@ -779,9 +778,8 @@ function wala_log_attr() {
 		$offset = $index * $commit_rec_count;
 		$limit = $commit_rec_count;
 		$log = get_web_access_log($offset, $limit);
-		$ips = array_column($log, 'ip_packed');
-		$min_ip_packed = min($ips);
-		$max_ip_packed = max($ips);
+		$min_ip_packed = $log[0]['ip_packed'];
+		$max_ip_packed = end($log)['ip_packed'];
 		load_asn_cache($min_ip_packed, $max_ip_packed);
 		load_country_cache($min_ip_packed, $max_ip_packed);
 		load_member_cache($min_ip_packed, $max_ip_packed);
