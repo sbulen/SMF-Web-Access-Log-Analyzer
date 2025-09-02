@@ -27,7 +27,7 @@ if (!defined('SMF')) {
 /**
  * browse_feeds - action.
  *
- * Primary action called from the admin menu for managing the RSS feeds.
+ * Primary action called from the admin menu for managing WALA loads & reports.
  * Sets subactions & list columns & figures out if which subaction to call.
  *
  * Action: admin
@@ -83,7 +83,7 @@ function wala_main() {
 }
 
 /**
- * show_feed_status.
+ * wala_load - page to load WALA with asn & country lookups & the web access log.
  *
  * Action: admin
  * Area: wala
@@ -167,7 +167,7 @@ function wala_load() {
 }
 
 /**
- * wala_reports
+ * wala_reports - page to let you run the reports.
  *
  * Action: admin
  * Area: wala
@@ -492,7 +492,7 @@ function wala_prep() {
 }
 
 /**
- * WALA_import - subaction to combine the chunks & prep csv chunks for import.
+ * WALA_import - subaction to import the csv chunks.
  * Used when loading dbip_asn, dbip_country & the access log.
  *
  * Action: xmlhttp
@@ -601,8 +601,7 @@ function wala_import() {
 }
 
 /**
- * WALA_members - subaction to load member reporting table from smf member table in chunks.
- * Used to load smf_members table to the wala_members table, to assign asn & country & also cache a few other attributes.
+ * WALA_members - subaction to load the wala member reporting table from smf member table in chunks.
  *
  * Action: xmlhttp
  * Subaction: walamemb
@@ -673,7 +672,7 @@ function wala_members() {
 }
 
 /**
- * WALA_member_attr - load attributes to the newly loaded member file.
+ * WALA_member_attr - load attributes to the newly loaded wala member file.
  * Looking up by IP, load ASN & Country.
  *
  * Action: xmlhttp
@@ -802,12 +801,10 @@ function wala_log_attr() {
 	}
 	else
 		$context['xml_data'][] = array('value' => 'OK ' . $chunkct . ' chunks');
-
-
 }
 
 /**
- * WALA_load_asn - load newly added asn file to db.
+ * WALA_load_asn - load a chunk of the dbip asn file to db.
  *
  * Action: na - helper function
  *
@@ -845,7 +842,7 @@ function wala_load_asn($filename = '') {
 }
 
 /**
- * WALA_load_country - load newly added country file to db.
+ * WALA_load_country - load a chunk of the dbip country file to db.
  *
  * Action: na - helper function
  *
@@ -881,7 +878,7 @@ function wala_load_country($filename = '') {
 }
 
 /**
- * WALA_load_log - load newly added web access log file to db.
+ * WALA_load_log - load a chunk of the web access log file to the db.
  *
  * Action: na - helper function
  *
