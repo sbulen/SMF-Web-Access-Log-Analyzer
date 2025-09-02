@@ -17,6 +17,7 @@ async function walaUpload(file_type) {
 	wala_chunk_size = Math.min(one_tenth, wala_chunk_size);
 	const CHUNK_SIZE = wala_chunk_size;
 	const chunkct_regex = /OK (\d{1,10}) chunks/;
+	let regex_match = null;
 
 	let start = 0;
 	let end = CHUNK_SIZE;
@@ -59,7 +60,7 @@ async function walaUpload(file_type) {
 				break;
 			}
 		} catch (error) {
-			console.error(wala_str_error_chunk + ' ' + index + ': ', error);
+			console.error(wala_str_error_chunk + ' ' + index + ': ' + error);
 			break;
 		}
 
@@ -85,14 +86,15 @@ async function walaUpload(file_type) {
 				body: formData,
 			});
 			const result = await response.text();
-			if (response.ok) {
+			regex_match = result.match(chunkct_regex);
+			if (response.ok && (regex_match !== null)) {
 				// Get the number of csv chunks
-				totalChunks = result.match(chunkct_regex)[1];
+				totalChunks = regex_match[1];
 			} else {
-				console.error(wala_str_failed);
+				console.error(wala_str_failed + ': ' + result);
 				new smc_Popup({
 					heading: wala_str_loader,
-					content: wala_str_failed,
+					content: wala_str_failed + ': ' + result,
 					icon_class: "main_icons error",
 				});
 				// If errors, kill the spinner & exit...
@@ -100,7 +102,7 @@ async function walaUpload(file_type) {
 				return;
 			}
 		} catch (error) {
-			console.error(wala_str_failed + ': ', error);
+			console.error(wala_str_failed + ': ' + error);
 			new smc_Popup({
 				heading: wala_str_loader,
 				content: wala_str_failed,
@@ -154,7 +156,7 @@ async function walaUpload(file_type) {
 				break;
 			}
 		} catch (error) {
-			console.error(wala_str_failed + ': ', error);
+			console.error(wala_str_failed + ': ' + error);
 			new smc_Popup({
 				heading: wala_str_loader,
 				content: wala_str_failed,
@@ -174,6 +176,7 @@ async function walaUpload(file_type) {
 		while (index < totalChunks) {
 			const formData = new FormData();
 			formData.append('index', index);
+			formData.append('name', file.name);
 			formData.append(smf_session_var, smf_session_id);
 			try {
 				// Note xml must be passed otherwise SMF will return a normal http template
@@ -183,21 +186,23 @@ async function walaUpload(file_type) {
 					body: formData,
 				});
 				const result = await response.text();
-				if (response.ok) {
-					totalChunks = result.match(chunkct_regex)[1];
+				regex_match = result.match(chunkct_regex);
+				if (response.ok && (regex_match !== null)) {
+					// Get the number of csv chunks
+					totalChunks = regex_match[1];
 					document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_attribution;
 				} else {
-					console.error(wala_str_failed);
+					console.error(wala_str_failed + ': ' + result);
 					new smc_Popup({
 						heading: wala_str_loader,
-						content: wala_str_failed,
+						content: wala_str_failed + ': ' + result,
 						icon_class: "main_icons error",
 					});
 					error_found = true;
 					break;
 				}
 			} catch (error) {
-				console.error(wala_str_failed + ': ', error);
+				console.error(wala_str_failed + ': ' + error);
 				new smc_Popup({
 					heading: wala_str_loader,
 					content: wala_str_failed,
@@ -211,16 +216,16 @@ async function walaUpload(file_type) {
 	}
 
 	// Last but not least, hide the spinner...
+	document.getElementById(file_type_wheel).style.visibility = 'hidden';
 	if (error_found === false) {
 		new smc_Popup({
 			heading: wala_str_loader,
 			content: wala_str_success,
 			icon_class: "main_icons reports",
 		});
+		// Give the success message a few secs of air time, then reload
+		setTimeout(() => {location.reload();}, 3000);
 	}
-	document.getElementById(file_type_wheel).style.visibility = 'hidden';
-	// Give the success/failure message a few secs of air time, then reload
-	setTimeout(() => {location.reload();}, 3000);
 }
 
 // Web Access Log Analyzer (WALA) function to load smf member data to reporting db.
@@ -233,6 +238,7 @@ async function walaMemberSync() {
 	let index = 0;
 	let processedChunks = 0;
 	const chunkct_regex = /OK (\d{1,10}) chunks/;
+	let regex_match = null;
 
 	// Start the spinner...
 	document.getElementById(file_type_wheel).style.visibility = 'visible';
@@ -256,22 +262,24 @@ async function walaMemberSync() {
 				body: formData,
 			});
 			const result = await response.text();
-			if (response.ok) {
+			regex_match = result.match(chunkct_regex);
+			if (response.ok && (regex_match !== null)) {
+				// Get the number of csv chunks
+				totalChunks = regex_match[1];
 				processedChunks++;
-				totalChunks = result.match(chunkct_regex)[1];
 				document.getElementById(file_type_status).textContent = Math.round(100*processedChunks/totalChunks) + wala_str_imported;
 			} else {
-				console.error(wala_str_failed);
+				console.error(wala_str_failed + ': ' + result);
 				new smc_Popup({
 					heading: wala_str_loader,
-					content: wala_str_failed,
+					content: wala_str_failed + ': ' + result,
 					icon_class: "main_icons error",
 				});
 				error_found = true;
 				break;
 			}
 		} catch (error) {
-			console.error(wala_str_failed + ': ', error);
+			console.error(wala_str_failed + ': ' + error);
 			new smc_Popup({
 				heading: wala_str_loader,
 				content: wala_str_failed,
@@ -299,21 +307,23 @@ async function walaMemberSync() {
 					body: formData,
 				});
 				const result = await response.text();
-				if (response.ok) {
-					totalChunks = result.match(chunkct_regex)[1];
+				regex_match = result.match(chunkct_regex);
+				if (response.ok && (regex_match !== null)) {
+					// Get the number of csv chunks
+					totalChunks = regex_match[1];
 					document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_attribution;
 				} else {
-					console.error(wala_str_failed);
+					console.error(wala_str_failed + ': ' + result);
 					new smc_Popup({
 						heading: wala_str_loader,
-						content: wala_str_failed,
+						content: wala_str_failed + ': ' + result,
 						icon_class: "main_icons error",
 					});
 					error_found = true;
 					break;
 				}
 			} catch (error) {
-				console.error(wala_str_failed + ': ', error);
+				console.error(wala_str_failed + ': ' + error);
 				new smc_Popup({
 					heading: wala_str_loader,
 					content: wala_str_failed,
@@ -327,16 +337,16 @@ async function walaMemberSync() {
 	}
 
 	// Last but not least, hide the spinner...
+	document.getElementById(file_type_wheel).style.visibility = 'hidden';
 	if (error_found === false) {
 		new smc_Popup({
 			heading: wala_str_loader,
 			content: wala_str_success,
 			icon_class: "main_icons reports",
 		});
+		// Give the success message a few secs of air time, then reload
+		setTimeout(() => {location.reload();}, 3000);
 	}
-	document.getElementById(file_type_wheel).style.visibility = 'hidden';
-	// Give the success/failure message a few secs of air time, then reload
-	setTimeout(() => {location.reload();}, 3000);
 }
 
 // disable the controls during processing

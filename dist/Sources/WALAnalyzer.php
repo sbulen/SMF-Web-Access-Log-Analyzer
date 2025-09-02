@@ -584,9 +584,6 @@ function wala_import() {
 		}
 		elseif ($file_type === 'country')
 			update_status('country', $file_name, time());
-		elseif ($file_type === 'log') {
-			update_status('log', $file_name, time());
-		}
 	}
 
 	// For a simple generic yes/no response
@@ -654,12 +651,6 @@ function wala_members() {
 		commit();
 	}
 
-	// If we're done, update the file status info...
-	if (!$issues && ($index ==	$chunkct)) {
-		update_status('member', '---', time());
-		commit();
-	}
-
 	// For a simple generic yes/no response
 	$context['sub_template'] = 'generic_xml';
 
@@ -712,16 +703,46 @@ function wala_memb_attr() {
 		$offset = $index * $commit_rec_count;
 		$limit = $commit_rec_count;
 		$members = get_wala_members($offset, $limit);
-		$min_ip_packed = $members[0]['ip_packed'];
-		$max_ip_packed = end($members)['ip_packed'];
-		load_asn_cache($min_ip_packed, $max_ip_packed);
-		load_country_cache($min_ip_packed, $max_ip_packed);
+		$min_ip_packed_1 = $members[0]['ip_packed'];
+		$max_ip_packed_1 = end($members)['ip_packed'];
+
+		// If jumping from ipv4 to ipv6, split 'em...
+		// Range can be just too big...
+		if (strlen($min_ip_packed_1) == strlen($max_ip_packed_1)) {
+			load_asn_cache($min_ip_packed_1, $max_ip_packed_1, true);
+			load_country_cache($min_ip_packed_1, $max_ip_packed_1, true);
+		}
+		else {
+			$max_ip_packed_2 = $max_ip_packed_1;
+			$max_ip_packed_1 = null;
+			$min_ip_packed_2 = null;
+			foreach ($members AS $member) {
+				if (strlen($member['ip_packed']) == 4) {
+					$max_ip_packed_1 = $member['ip_packed'];
+				}
+				elseif ((strlen($member['ip_packed']) == 16) && ($min_ip_packed_2 === null)) {
+					$min_ip_packed_2 = $member['ip_packed'];
+					break;
+				}
+			}
+			load_asn_cache($min_ip_packed_1, $max_ip_packed_1, true);
+			load_asn_cache($min_ip_packed_2, $max_ip_packed_2, false);
+			load_country_cache($min_ip_packed_1, $max_ip_packed_1, true);
+			load_country_cache($min_ip_packed_2, $max_ip_packed_2, false);
+		}
+
 		start_transaction();
 		foreach ($members AS $member_info) {
 			$member_info['asn'] = get_asn($member_info['ip_packed']);
 			$member_info['country'] = get_country($member_info['ip_packed']);
 			update_wala_members($member_info);
 		}
+		commit();
+	}
+
+	// If we're done, update the file status info...
+	if (!$issues && ($index == $chunkct - 1)) {
+		update_status('member', '---', time());
 		commit();
 	}
 
@@ -762,6 +783,12 @@ function wala_log_attr() {
 	else
 		$issues = true;
 
+	$file_name = '';
+	if (isset($_POST['name']) && is_string($_POST['name']))
+		$file_name = $_POST['name'];
+	else
+		$issues = true;
+
 	// Gonna need this...
 	require_once($sourcedir . '/WALAnalyzerModel.php');
 
@@ -777,11 +804,37 @@ function wala_log_attr() {
 		$offset = $index * $commit_rec_count;
 		$limit = $commit_rec_count;
 		$log = get_web_access_log($offset, $limit);
-		$min_ip_packed = $log[0]['ip_packed'];
-		$max_ip_packed = end($log)['ip_packed'];
-		load_asn_cache($min_ip_packed, $max_ip_packed);
-		load_country_cache($min_ip_packed, $max_ip_packed);
-		load_member_cache($min_ip_packed, $max_ip_packed);
+		$min_ip_packed_1 = $log[0]['ip_packed'];
+		$max_ip_packed_1 = end($log)['ip_packed'];
+		load_member_cache($min_ip_packed_1, $max_ip_packed_1);
+
+		// If jumping from ipv4 to ipv6, split 'em...
+		// Range can be just too big...
+		if (strlen($min_ip_packed_1) == strlen($max_ip_packed_1)) {
+			load_asn_cache($min_ip_packed_1, $max_ip_packed_1, true);
+			load_country_cache($min_ip_packed_1, $max_ip_packed_1, true);
+		}
+		else {
+			$max_ip_packed_2 = $max_ip_packed_1;
+			$max_ip_packed_1 = null;
+			$min_ip_packed_2 = null;
+			foreach ($log AS $entry) {
+				if (strlen($entry['ip_packed']) == 4) {
+					$max_ip_packed_1 = $entry['ip_packed'];
+				}
+				elseif ((strlen($entry['ip_packed']) == 16) && ($min_ip_packed_2 === null)) {
+					$min_ip_packed_2 = $entry['ip_packed'];
+					break;
+				}
+			}
+			// ipv4...
+			load_asn_cache($min_ip_packed_1, $max_ip_packed_1, true);
+			load_country_cache($min_ip_packed_1, $max_ip_packed_1, true);
+			// ipv6...
+			load_asn_cache($min_ip_packed_2, $max_ip_packed_2, false);
+			load_country_cache($min_ip_packed_2, $max_ip_packed_2, false);
+		}
+
 		start_transaction();
 		foreach ($log AS $entry_info) {
 			$entry_info['asn'] = get_asn($entry_info['ip_packed']);
@@ -789,6 +842,12 @@ function wala_log_attr() {
 			$entry_info['username'] = get_username($entry_info['ip_packed']);
 			update_web_access_log($entry_info);
 		}
+		commit();
+	}
+
+	// If we're done, update the file status info...
+	if (!$issues && ($index == $chunkct - 1)) {
+		update_status('log', $file_name, time());
 		commit();
 	}
 
@@ -929,14 +988,16 @@ function wala_load_log($filename = '') {
  *
  * @params inet $min_ip_packed
  * @params inet $max_ip_packed
+ * @params bool $truncate - don't truncate if adding to existing cache
  *
  * @return void
  *
  */
-function load_asn_cache($min_ip_packed, $max_ip_packed) {
+function load_asn_cache($min_ip_packed, $max_ip_packed, $truncate) {
 	global $asn_cache;
 
-	$asn_cache = array();
+	if ($truncate)
+		$asn_cache = array();
 	$asns = get_asns($min_ip_packed, $max_ip_packed);
 
 	$counter = 0;
@@ -993,14 +1054,16 @@ function get_asn($ip_packed) {
  *
  * @params inet $min_ip_packed
  * @params inet $max_ip_packed
+ * @params bool $truncate - don't truncate if adding to existing cache
  *
  * @return void
  *
  */
-function load_country_cache($min_ip_packed, $max_ip_packed) {
+function load_country_cache($min_ip_packed, $max_ip_packed, $truncate) {
 	global $country_cache;
 
-	$country_cache = array();
+	if ($truncate)
+		$country_cache = array();
 	$countries = get_countries($min_ip_packed, $max_ip_packed);
 
 	$counter = 0;
