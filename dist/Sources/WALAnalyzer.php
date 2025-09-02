@@ -725,9 +725,11 @@ function wala_memb_attr() {
 					break;
 				}
 			}
+			// ipv4...
 			load_asn_cache($min_ip_packed_1, $max_ip_packed_1, true);
-			load_asn_cache($min_ip_packed_2, $max_ip_packed_2, false);
 			load_country_cache($min_ip_packed_1, $max_ip_packed_1, true);
+			// ipv6...
+			load_asn_cache($min_ip_packed_2, $max_ip_packed_2, false);
 			load_country_cache($min_ip_packed_2, $max_ip_packed_2, false);
 		}
 
