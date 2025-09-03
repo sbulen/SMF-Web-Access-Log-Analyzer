@@ -302,7 +302,10 @@ function wala_reports() {
 function wala_chunk() {
 	global $context, $cachedir;
 
-	// Make sure it's OK they're here...
+	// You have to be able to moderate the forum to do this.
+	isAllowedTo('admin_forum');
+
+	// Make sure the right person is putzing...
 	checkSession();
 
 	// if file system or post issues encountered, return a 500
@@ -378,7 +381,10 @@ function wala_chunk() {
 function wala_prep() {
     global $context, $txt, $sourcedir, $cachedir;
 
-	// Make sure it's OK they're here...
+	// You have to be able to moderate the forum to do this.
+	isAllowedTo('admin_forum');
+
+	// Make sure the right person is putzing...
 	checkSession();
 
 	// If file system or post issues encountered, return a 500
@@ -504,7 +510,10 @@ function wala_prep() {
 function wala_import() {
 	global $context, $txt, $sourcedir, $cachedir;
 
-	// Make sure it's OK they're here...
+	// You have to be able to moderate the forum to do this.
+	isAllowedTo('admin_forum');
+
+	// Make sure the right person is putzing...
 	checkSession();
 
 	// If file system or post issues encountered, return a 500
@@ -609,7 +618,10 @@ function wala_import() {
 function wala_members() {
 	global $context, $txt, $sourcedir, $cachedir;
 
-	// Make sure it's OK they're here...
+	// You have to be able to moderate the forum to do this.
+	isAllowedTo('admin_forum');
+
+	// Make sure the right person is putzing...
 	checkSession();
 
 	// If file system or post issues encountered, return a 500
@@ -676,7 +688,10 @@ function wala_memb_attr() {
 
     global $context, $sourcedir;
 
-	// Make sure it's OK they're here...
+	// You have to be able to moderate the forum to do this.
+	isAllowedTo('admin_forum');
+
+	// Make sure the right person is putzing...
 	checkSession();
 
 	// If file system or post issues encountered, return a 500
@@ -773,7 +788,10 @@ function wala_log_attr() {
 
     global $context, $sourcedir;
 
-	// Make sure it's OK they're here...
+	// You have to be able to moderate the forum to do this.
+	isAllowedTo('admin_forum');
+
+	// Make sure the right person is putzing...
 	checkSession();
 
 	// If file system or post issues encountered, return a 500
