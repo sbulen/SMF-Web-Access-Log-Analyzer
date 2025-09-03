@@ -37,48 +37,41 @@ function template_wala_load()
 			<dl class="settings">';
 
 	echo '
-			<fieldset>
+			<fieldset class="wala_file_group">
 				<legend>', $txt['wala_file_asn'], '</legend>
-					<label for="wala_file_asn">' . $txt['file'] . ':</label><div id="wala_file_asn" class="wala_file_name">' . $context['wala_status']['asn']['file_name'] . '</div>
-					<label for="wala_update_asn">' . $txt['wala_updated'] . ':</label><div id="wala_update_asn" class="wala_date">' . $context['wala_status']['asn']['last_proc_time'] . '</div>
+					<label for="wala_file_asn">' . $txt['file'] . ':<div id="wala_file_asn" class="wala_file_name">' . $context['wala_status']['asn']['file_name'] . '</div></label>
+					<label for="wala_update_asn">' . $txt['wala_updated'] . ':<div id="wala_update_asn" class="wala_date">' . $context['wala_status']['asn']['last_proc_time'] . '</div></label>
 					<input type="file" name="file_asn_gz" id="file_asn_gz" class="wala_file_input" value="file_asn_gz" size="80">
 					<div id="file_asn_status" class="wala_file_status"></div>
-					<div id="file_asn_wheel" class="wala_file_wheel">
-						<img src="' . $boardurl . '/Themes/default/images/loading_sm.gif"/>
-					</div>
-					<input type="submit" id="file_asn_upload" value="' . $txt['upload'] . '" class="button"  onclick="walaUpload(\'asn\')">
+					<div id="file_asn_wheel" class="wala_file_wheel"><img src="' . $boardurl . '/Themes/default/images/loading_sm.gif"/></div>
+					<input type="submit" id="file_asn_upload" value="' . $txt['upload'] . '" class="button wala_button"  onclick="walaUpload(\'asn\')">
 			</fieldset>
-			<fieldset>
+			<fieldset class="wala_file_group">
 				<legend>', $txt['wala_file_country'], '</legend>
-					<label for="wala_file_country">' . $txt['file'] . ':</label><div id="wala_file_country" class="wala_file_name">' . $context['wala_status']['country']['file_name'] . '</div>
-					<label for="wala_update_country">' . $txt['wala_updated'] . ':</label><div id="wala_update_country" class="wala_date">' . $context['wala_status']['country']['last_proc_time'] . '</div>
+					<label for="wala_file_country">' . $txt['file'] . ':<div id="wala_file_country" class="wala_file_name">' . $context['wala_status']['country']['file_name'] . '</div></label>
+					<label for="wala_update_country">' . $txt['wala_updated'] . ':<div id="wala_update_country" class="wala_date">' . $context['wala_status']['country']['last_proc_time'] . '</div></label>
 					<input type="file" name="file_country_gz" id="file_country_gz" class="wala_file_input" value="file_country_gz" size="80">
 					<div id="file_country_status" class="wala_file_status"></div>
-					<div id="file_country_wheel" class="wala_file_wheel">
-						<img src="' . $boardurl . '/Themes/default/images/loading_sm.gif"/>
-					</div>
-					<input type="submit" id="file_country_upload" value="' . $txt['upload'] . '" class="button"  onclick="walaUpload(\'country\')">
+					<div id="file_country_wheel" class="wala_file_wheel"><img src="' . $boardurl . '/Themes/default/images/loading_sm.gif"/></div>
+					<input type="submit" id="file_country_upload" value="' . $txt['upload'] . '" class="button wala_button"  onclick="walaUpload(\'country\')">
 			</fieldset>
-			<fieldset>
+			<fieldset class="wala_file_group">
 				<legend>', $txt['wala_member_file'], '</legend>
-					<label for="wala_file_log" style="visibility:hidden;">' . $txt['file'] . ':</label><div id="wala_file_log" class="wala_file_name"></div>
-					<label for="wala_update_member">' . $txt['wala_updated'] . ':</label><div id="wala_update_member" class="wala_date">' . $context['wala_status']['member']['last_proc_time'] . '</div>
+					<label for="wala_file_log" style="visibility:hidden;">' . $txt['file'] . ':<div id="wala_file_log" class="wala_file_name"></div></label>
+					<label for="wala_update_member">' . $txt['wala_updated'] . ':<div id="wala_update_member" class="wala_date">' . $context['wala_status']['member']['last_proc_time'] . '</div></label>
+					<div class="wala_file_input"></div>
 					<div id="file_member_status" class="wala_file_status"></div>
-					<div id="file_member_wheel" class="wala_file_wheel">
-						<img src="' . $boardurl . '/Themes/default/images/loading_sm.gif"/>
-					</div>
-					<input type="submit" id="file_member" value="' . $txt['wala_reload'] . '" class="button"  onclick="walaMemberSync()">
+					<div id="file_member_wheel" class="wala_file_wheel"><img src="' . $boardurl . '/Themes/default/images/loading_sm.gif"/></div>
+					<input type="submit" id="file_member" value="' . $txt['wala_reload'] . '" class="button wala_button"  onclick="walaMemberSync()">
 			</fieldset>
-			<fieldset>
+			<fieldset class="wala_file_group">
 				<legend>', $txt['wala_access_log'], '</legend>
-					<label for="wala_file_log">' . $txt['file'] . ':</label><div id="wala_file_log" class="wala_file_name">' . $context['wala_status']['log']['file_name'] . '</div>
-					<label for="wala_update_log">' . $txt['wala_updated'] . ':</label><div id="wala_update_log" class="wala_date">' . $context['wala_status']['log']['last_proc_time'] . '</div>
+					<label for="wala_file_log">' . $txt['file'] . ':<div id="wala_file_log" class="wala_file_name">' . $context['wala_status']['log']['file_name'] . '</div></label>
+					<label for="wala_update_log">' . $txt['wala_updated'] . ':<div id="wala_update_log" class="wala_date">' . $context['wala_status']['log']['last_proc_time'] . '</div></label>
 					<input type="file" name="file_log_gz" id="file_log_gz" class="wala_file_input" value="file_log_gz" size="80">
 					<div id="file_log_status" class="wala_file_status"></div>
-					<div id="file_log_wheel" class="wala_file_wheel">
-						<img src="' . $boardurl . '/Themes/default/images/loading_sm.gif"/>
-					</div>
-					<input type="submit" id="file_log_upload" value="' . $txt['upload'] . '" class="button"  onclick="walaUpload(\'log\')">
+					<div id="file_log_wheel" class="wala_file_wheel"><img src="' . $boardurl . '/Themes/default/images/loading_sm.gif"/></div>
+					<input type="submit" id="file_log_upload" value="' . $txt['upload'] . '" class="button wala_button"  onclick="walaUpload(\'log\')">
 			</fieldset>';
 
 	echo '

@@ -1,5 +1,5 @@
 # Description
-WALA, the Web Access Log Analyzer, is a very simple reporting database created from your apache web access logs.
+WALA, the SMF Web Access Log Analyzer, is a very simple reporting database created from your Apache web access logs.
 
 The goal is to provide insight into the source and nature of your web traffic.  It will inform you which countries and ASNs are hitting you the hardest, and how this aligns with your registered user base.
 
@@ -7,7 +7,7 @@ This uses a very simple load-report approach, intended for a point-in time analy
 
 Twenty standard reports are provided.  The database is simple enough that you can expand upon the reports yourself, writing your own queries.  Since all tables used in the report are separate from the SMF core tables, reporting & tweaking is safe and straightforward.  All you need is access to the tables directly within any query tool, such as adminer or phpmyadmin.
 
-Although it would be best to perform this analysis on a test copy of your forum, if one is not available, it is safe to run directly against your production site.
+Although it would be best to perform this analysis on a test copy of your SMF forum, if one is not available, it is safe to run on your production site.
 
 The first nine columns of the apache web access logs usually conform to the Apache Combined Log format (https://httpd.apache.org/docs/2.4/logs.html).  This tool only works if the first nine fields in the log match this format, and that they are in English (e.g., 'Aug').
 

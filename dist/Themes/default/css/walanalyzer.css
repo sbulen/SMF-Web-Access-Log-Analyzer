@@ -1,30 +1,38 @@
+.wala_file_group {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 5px;
+	justify-content: space-around;
+}
 .wala_file_name {
 	display: inline-block;
-	padding: 0 0 0 5px;
-	width: 25%;
+	padding: 0 0 0 7px;
+	width: 250px;
 }
-
 .wala_date {
 	display: inline-block;
-	padding: 0 0 0 5px;
-	width: 20%;
+	padding: 0 0 0 7px;
+	width: 250px;
 }
-
 .wala_file_input {
 	display: inline-block;
-	padding: 0 0 0 5px;
-	width: 25%;
+	padding: 0 0 0 7px;
+	width: 250px;
 }
-
 .wala_file_status {
 	display: inline-block;
-	padding: 0 0 0 5px;
+	padding: 0 0 0 7px;
+	width: 150px;
 }
-
 .wala_file_wheel {
 	display: inline-block;
 	padding: 0;
 	visibility: hidden;
+}
+.wala_button {
+	align-self: flex-end;
 }
 
 .wala_table {
