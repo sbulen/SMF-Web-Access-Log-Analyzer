@@ -34,7 +34,6 @@ This tool also requires use of two free databases, the DBIP lite databases, foun
  - DBIP ASN & Country lite lookups only.
  - The free versions of the DBIP databases are not kept as current & as detailed as the paid versions, of course...  They're a little old, and a little gappy, but acceptable for high-level analytics.
  - Member attribution, provider ASN and country, is not updated real-time into SMF.  This is meant to be an offline reporting tool, refreshed when a new analysis is needed.
- - It is recommended you do the loads & reporting on a desktop computer.  It kinda sorta works on mobile.  But only kinda sorta...
  
 [b]Releases:[/b]
  - v1.0.0 Initial Commit
