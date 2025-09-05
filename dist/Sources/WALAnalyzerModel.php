@@ -60,11 +60,6 @@ function truncate_dbip_asn() {
 	$smcFunc['db_query']('', 'TRUNCATE {db_prefix}wala_dbip_asn',
 		array()
 	);
-
-	// Kill the cache...
-	if (!empty($cache_enable)) {
-		cache_put_data('wala_asns', null);
-	}
 	// Reflect status...
 	update_status('asn');
 }
@@ -81,11 +76,6 @@ function truncate_dbip_country() {
 	$smcFunc['db_query']('', 'TRUNCATE {db_prefix}wala_dbip_country',
 		array()
 	);
-
-	// Kill the cache...
-	if (!empty($cache_enable)) {
-		cache_put_data('wala_countries', null);
-	}
 	// Reflect status...
 	update_status('country');
 }
@@ -102,11 +92,6 @@ function truncate_members() {
 	$smcFunc['db_query']('', 'TRUNCATE {db_prefix}wala_members',
 		array()
 	);
-
-	// Kill the cache...
-	if (!empty($cache_enable)) {
-		cache_put_data('wala_members', null);
-	}
 	// Reflect status...
 	update_status('member');
 }
@@ -130,6 +115,8 @@ function truncate_web_access_log() {
 /**
  * insert_dbip_asn
  *
+ * @param array $inserts
+ *
  * @return null
  *
  */
@@ -149,6 +136,8 @@ function insert_dbip_asn(&$inserts) {
 
 /**
  * insert_dbip_country
+ *
+ * @param array $inserts
  *
  * @return null
  *
@@ -170,6 +159,8 @@ function insert_dbip_country(&$inserts) {
 /**
  * insert_log
  *
+ * @param array $inserts
+ *
  * @return null
  *
  */
@@ -190,10 +181,10 @@ function insert_log(&$inserts) {
 /**
  * get_asns
  *
- * @params binary min IP
- * @params binary max IP
+ * @params inet min IP
+ * @params inet max IP
  *
- * @return result
+ * @return array result
  *
  */
 function get_asns($min_ip_packed, $max_ip_packed) {
@@ -236,10 +227,10 @@ function get_asns($min_ip_packed, $max_ip_packed) {
 /**
  * get_countries
  *
- * @params binary min IP
- * @params binary max IP
+ * @params inet min IP
+ * @params inet max IP
  *
- * @return result
+ * @return array result
  *
  */
 function get_countries($min_ip_packed, $max_ip_packed) {
@@ -409,7 +400,6 @@ function load_asn_names() {
 		$inserts,
 		array('asn'),
 	);
-	
 }
 
 /**

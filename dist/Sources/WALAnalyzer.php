@@ -25,7 +25,7 @@ if (!defined('SMF')) {
 }
 
 /**
- * browse_feeds - action.
+ * wala_main - action.
  *
  * Primary action called from the admin menu for managing WALA loads & reports.
  * Sets subactions & list columns & figures out if which subaction to call.
@@ -887,6 +887,8 @@ function wala_log_attr() {
  *
  * Action: na - helper function
  *
+ * @param string filename of chunk
+ *
  * @return bool issues found
  *
  */
@@ -925,6 +927,8 @@ function wala_load_asn($filename = '') {
  *
  * Action: na - helper function
  *
+ * @param string filename of chunk
+ *
  * @return bool $issues_found
  *
  */
@@ -960,6 +964,8 @@ function wala_load_country($filename = '') {
  * WALA_load_log - load a chunk of the web access log file to the db.
  *
  * Action: na - helper function
+ *
+ * @param string filename of chunk
  *
  * @return null
  *
@@ -1068,7 +1074,6 @@ function get_asn($ip_packed) {
 
 /**
  * load_country_cache - load up the asn b-tree style cache.
- * Passed by reference to avoid pushing on/off the stack.
  *
  * Action: na - helper function
  *
@@ -1134,7 +1139,6 @@ function get_country($ip_packed) {
 
 /**
  * load_member_cache - load up the member cache.
- * Passed by reference to avoid pushing on/off the stack.
  *
  * Action: na - helper function
  *
