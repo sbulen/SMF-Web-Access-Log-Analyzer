@@ -38,3 +38,4 @@ This tool also requires use of two free databases, the DBIP lite databases, foun
 [b]Releases:[/b]
  - v1.0.0 Initial Commit
  - v1.0.1 Removed unused caching code
+ - v1.0.2 Transactions for bulk inserts
