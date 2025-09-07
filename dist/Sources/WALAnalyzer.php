@@ -560,11 +560,11 @@ function wala_import() {
 	// Build the file from the info passed
 	$filename_csv .= '.chunk.' . $index;
 
-	// Disable autocommits for mass inserts (can hide errors, though...)
-	start_transaction();
 
 	// Now choose what to load based on file_type
+	// Disable autocommits for mass inserts (can hide errors, though...)
 	if (!$issues) {
+		start_transaction();
 		if ($file_type === 'asn')
 			$issues = wala_load_asn($temp_dir . '/' . $filename_csv);
 		elseif ($file_type === 'country')
@@ -586,6 +586,7 @@ function wala_import() {
 
 	// If we're done, update the file status info...
 	if (!$issues && ($index === $total_chunks)) {
+		start_transaction();
 		if ($file_type === 'asn') {
 			// Also load wala_asns from wala_dbip_asn...
 			load_asn_names();
@@ -593,6 +594,7 @@ function wala_import() {
 		}
 		elseif ($file_type === 'country')
 			update_status('country', $file_name, time());
+		commit();
 	}
 
 	// For a simple generic yes/no response
@@ -645,20 +647,20 @@ function wala_members() {
 		$commit_rec_count = 20000;
 	$chunkct = ceil($reccount/$commit_rec_count);
 
-	// Disable autocommits for mass inserts (can hide errors, though...)
-	start_transaction();
-
 	// Truncate target table...
 	if (!$issues && ($index ==	1)) {
+		start_transaction();
 		truncate_members();
 		commit();
 	}
 
 	// Copy over a set of members...
+	// Disable autocommits for mass inserts (can hide errors, though...)
 	$start = ($index - 1) * $commit_rec_count;
 	$inserts = array();
 	if (!$issues) {
 		$inserts = get_smf_members($start, $commit_rec_count);
+		start_transaction();
 		insert_members($inserts);
 		commit();
 	}
@@ -760,7 +762,6 @@ function wala_memb_attr() {
 	// If we're done, update the file status info...
 	if (!$issues && ($index == $chunkct - 1)) {
 		update_status('member', '---', time());
-		commit();
 	}
 
 	// For a simple generic yes/no response
@@ -868,7 +869,6 @@ function wala_log_attr() {
 	// If we're done, update the file status info...
 	if (!$issues && ($index == $chunkct - 1)) {
 		update_status('log', $file_name, time());
-		commit();
 	}
 
 	// For a simple generic yes/no response
