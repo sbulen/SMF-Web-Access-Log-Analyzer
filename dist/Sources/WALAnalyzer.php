@@ -933,6 +933,7 @@ function wala_load_asn($filename = '') {
  *
  */
 function wala_load_country($filename = '') {
+	$batch_size = 1000;
 	$fp = @fopen($filename, 'r');
 	$buffer = @fgetcsv($fp, null, ",", "\"", "\\");
 	$inserts = array();
@@ -940,6 +941,7 @@ function wala_load_country($filename = '') {
 	// $buffer[0] = ip from, display format
 	// $buffer[1] = ip to, display format
 	// $buffer[2] = two char country code
+	$inserts = array();
 	while ($buffer !== false) {
 		// Uploaded from random sources????  Let's make sure we're good...
 		if (!filter_var($buffer[0], FILTER_VALIDATE_IP) || !filter_var($buffer[1], FILTER_VALIDATE_IP) || !is_string($buffer[2]))
@@ -953,9 +955,15 @@ function wala_load_country($filename = '') {
 			$buffer[1],
 			$buffer[2],
 		);
+		if (count($inserts) >= $batch_size) {
+			insert_dbip_country($inserts);
+			$inserts = array();
+		}
 		$buffer = @fgetcsv($fp, null, ",", "\"", "\\");
 	}
-	insert_dbip_country($inserts);
+	if (!empty($inserts)) {
+		insert_dbip_country($inserts);
+	}
 	@fclose($fp);
 	return false;
 }
