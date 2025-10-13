@@ -121,10 +121,13 @@ function truncate_web_access_log() {
  *
  */
 function insert_dbip_asn(&$inserts) {
-	global $smcFunc;
+	global $smcFunc, $modSettings;
 
 	if (empty($inserts))
 		return;
+
+	// Temporarily disable query check...  Takes a MASSIVE amount of time on large inserts...
+	$modSettings['disableQueryCheck'] = '1';
 
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}wala_dbip_asn',
@@ -143,10 +146,13 @@ function insert_dbip_asn(&$inserts) {
  *
  */
 function insert_dbip_country(&$inserts) {
-	global $smcFunc;
+	global $smcFunc, $modSettings;
 
 	if (empty($inserts))
 		return;
+
+	// Temporarily disable query check...  Takes a MASSIVE amount of time on large inserts...
+	$modSettings['disableQueryCheck'] = '1';
 
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}wala_dbip_country',
@@ -165,10 +171,13 @@ function insert_dbip_country(&$inserts) {
  *
  */
 function insert_log(&$inserts) {
-	global $smcFunc;
+	global $smcFunc, $modSettings;
 
 	if (empty($inserts))
 		return;
+
+	// Temporarily disable query check...  Takes a MASSIVE amount of time on large inserts...
+	$modSettings['disableQueryCheck'] = '1';
 
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}wala_web_access_log',
@@ -336,10 +345,13 @@ function get_smf_members($offset = 0, $limit = 50000) {
  *
  */
 function insert_members(&$inserts) {
-	global $smcFunc;
+	global $smcFunc, $modSettings;
 
 	if (empty($inserts))
 		return;
+
+	// Temporarily disable query check...  Takes a MASSIVE amount of time on large inserts...
+	$modSettings['disableQueryCheck'] = '1';
 
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}wala_members',
@@ -385,7 +397,7 @@ function get_member_ips() {
  *
  */
 function load_asn_names() {
-	global $smcFunc;
+	global $smcFunc, $modSettings;
 
 	$smcFunc['db_query']('', 'TRUNCATE {db_prefix}wala_asns',
 		array()
@@ -393,6 +405,9 @@ function load_asn_names() {
 
 	$result = $smcFunc['db_query']('', 'SELECT DISTINCT(asn), asn_name FROM {db_prefix}wala_dbip_asn ORDER BY asn');
 	$inserts = $smcFunc['db_fetch_all']($result);
+
+	// Temporarily disable query check...  Takes a MASSIVE amount of time on large inserts...
+	$modSettings['disableQueryCheck'] = '1';
 
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}wala_asns',
