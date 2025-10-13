@@ -6,7 +6,7 @@
 	<version>1.0.3</version>
 	<type>modification</type>
 	<install for="2.1.6-2.1.99">
-		<readme type="file" parsebbc="true">readme.txt</readme> 
+		<readme type="file" parsebbc="true">readme.txt</readme>
 		<require-dir name="Sources" destination="$boarddir"/>
 		<require-dir name="Themes" destination="$boarddir"/>
 		<require-dir name="cache" destination="$boarddir"/>
@@ -15,7 +15,7 @@
 		<hook hook="integrate_simple_actions" function="wala_simple_actions" file="$sourcedir/WALAnalyzerHooks.php" />
 		<hook hook="integrate_XMLhttpMain_subActions" function="wala_XMLhttpMain_subActions" file="$sourcedir/WALAnalyzerHooks.php" />
 		<hook hook="integrate_admin_areas" function="wala_admin_menu" file="$sourcedir/WALAnalyzerHooks.php" />
-	</install>	
+	</install>
 	<uninstall for="2.1.6-2.1.99">
 		<hook hook="integrate_admin_areas" function="wala_admin_menu" file="$sourcedir/WALAnalyzerHooks.php" reverse="true" />
 		<hook hook="integrate_XMLhttpMain_subActions" function="wala_XMLhttpMain_subActions" file="$sourcedir/WALAnalyzerHooks.php" reverse="true" />

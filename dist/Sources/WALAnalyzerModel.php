@@ -8,7 +8,7 @@
  *	it under the terms of the GNU General Public License as published by
  *	the Free Software Foundation, either version 3 of the License, or
  *	(at your option) any later version.
- *	
+ *
  *	This software is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -219,7 +219,7 @@ function get_asns($min_ip_packed, $max_ip_packed) {
 	}
 	$result = $smcFunc['db_query']('', $sql);
 
-	// Under SMF, PG & MySQL behave differently with inet types.  MySQL reads binary, but wants a display upon insert.  
+	// Under SMF, PG & MySQL behave differently with inet types.  MySQL reads binary, but wants a display upon insert.
 	// PG always reads & writes display.
 	// WALA uses binary on reads, so needs to xlate pg on reads here.
 	$all_rows = array();
@@ -265,7 +265,7 @@ function get_countries($min_ip_packed, $max_ip_packed) {
 	}
 	$result = $smcFunc['db_query']('', $sql);
 
-	// Under SMF, PG & MySQL behave differently with inet types.  MySQL reads binary, but wants a display upon insert.  
+	// Under SMF, PG & MySQL behave differently with inet types.  MySQL reads binary, but wants a display upon insert.
 	// PG always reads & writes display.
 	// WALA uses binary on reads, so needs to xlate pg on reads here.
 	$all_rows = array();
@@ -323,7 +323,7 @@ function get_smf_members($offset = 0, $limit = 50000) {
 
 	$result = $smcFunc['db_query']('', 'SELECT member_ip, id_member, real_name, is_activated , posts, total_time_logged_in, date_registered, last_login FROM {db_prefix}members ORDER BY id_member ASC LIMIT ' . $limit . ' OFFSET ' . $offset);
 
-	// Under SMF, PG & MySQL behave differently with inet types.  MySQL reads binary, but wants a display upon insert.  
+	// Under SMF, PG & MySQL behave differently with inet types.  MySQL reads binary, but wants a display upon insert.
 	// PG always reads & writes display.
 	// We need display, for this member load, so pg is ok.
 	$all_rows = array();

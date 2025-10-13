@@ -36,7 +36,7 @@ A special thanks to @live627 for excellent input on performance & how to speed t
  - DBIP ASN & Country lite lookups only.
  - The free versions of the DBIP databases are not kept as current & as detailed as the paid versions, of course...  They're a little old, and a little gappy, but acceptable for high-level analytics.
  - Member attribution, provider ASN and country, is not updated real-time into SMF.  This is meant to be an offline reporting tool, refreshed when a new analysis is needed.
- 
+
 [b]Releases:[/b]
  - v1.0.0 Initial Commit
  - v1.0.1 Removed unused caching code

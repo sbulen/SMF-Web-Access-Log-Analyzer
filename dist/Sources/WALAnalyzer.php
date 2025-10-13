@@ -8,7 +8,7 @@
  *	it under the terms of the GNU General Public License as published by
  *	the Free Software Foundation, either version 3 of the License, or
  *	(at your option) any later version.
- *	
+ *
  *	This software is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -289,7 +289,75 @@ function wala_reports() {
 }
 
 /**
- * WALA chunk respose - subaction for uploaded file chunk.
+ * WALA start response.
+ * Used before loading dbip_asn, dbip_country & the access log.
+ * Clear out temp files to start with an empty slate.
+ *
+ * Action: xmlhttp
+ * Subaction: walastart
+ *
+ * @return null
+ *
+ */
+function wala_start() {
+	global $context, $cachedir;
+
+	// You have to be able to moderate the forum to do this.
+	isAllowedTo('admin_forum');
+
+	// Make sure the right person is putzing...
+	checkSession();
+
+	// if file system or post issues encountered, return a 500
+	$issues = false;
+
+	// Let's use our own subdir...
+	$temp_dir = $cachedir . '/wala';
+	if (!is_dir($temp_dir)) {
+		if (@mkdir($temp_dir, 0755) === false)
+			$issues = true;
+	}
+
+	// If POST fails due to network settings issues, these aren't set...
+	$file_name = '';
+	if (isset($_POST['name']) && is_string($_POST['name']))
+		$file_name = $_POST['name'];
+	else
+		$issues = true;
+
+	$file_type = '';
+	if (isset($_POST['file_type']) && is_string($_POST['file_type']))
+		$file_type = $_POST['file_type'];
+	else
+		$issues = true;
+
+	// Since this is the start of the whole process, clear out all similar filenames
+	// in case anything left over from previous failed attempts - .csvs and .gzs, all parts#s.
+	if (substr($file_name, -3) === '.gz')
+		$del_pattern = substr($file_name, 0, -3);
+	else
+		$del_pattern = $file_name;
+
+	$files = glob($temp_dir . '/' . $del_pattern . '*');
+	foreach($files as $file){
+		if(is_file($file)) {
+			@unlink($file);
+		}
+	}
+
+	// For a simple generic yes/no response
+	$context['sub_template'] = 'generic_xml';
+
+	if ($issues) {
+		$context['xml_data'][] = array('value' => 'FAILURE');
+		send_http_status(500);
+	}
+	else
+		$context['xml_data'][] = array('value' => 'OK');
+}
+
+/**
+ * WALA chunk response - subaction for uploaded file chunk.
  * Used when loading dbip_asn, dbip_country & the access log.
  * Load the file chunk sent by the fetch api.
  *
@@ -336,22 +404,6 @@ function wala_chunk() {
 		$file_type = $_POST['file_type'];
 	else
 		$issues = true;
-
-	// Since this is the start of the whole process, clear out all similar filenames
-	// in case anything left over from previous failed attempts - .csvs and .gzs, all parts#s.
-	if ($file_index == 1) {
-		if (substr($file_name, -3) === '.gz')
-			$del_pattern = substr($file_name, 0, -3);
-		else
-			$del_pattern = $file_name;
-		
-		$files = glob($temp_dir . '/' . $del_pattern . '*');
-		foreach($files as $file){
-			if(is_file($file)) {
-				@unlink($file);
-			}
-		}
-	}
 
 	// Move the current chunk to tmp
 	if (@move_uploaded_file($_FILES['chunk']['tmp_name'], $temp_dir . '/' . $file_name . '.chunk.' . $file_index) === false)
@@ -584,8 +636,65 @@ function wala_import() {
 	// Don't need this one anymore either...
 	@unlink($temp_dir . '/' . $filename_csv);
 
-	// If we're done, update the file status info...
-	if (!$issues && ($index === $total_chunks)) {
+	// For a simple generic yes/no response
+	$context['sub_template'] = 'generic_xml';
+
+	if ($issues) {
+		$context['xml_data'][] = array('value' => 'FAILURE');
+		send_http_status(500);
+	}
+	else
+		$context['xml_data'][] = array('value' => 'OK');
+}
+
+/**
+ * WALA end response.
+ * Used after loading dbip_asn, dbip_country & the access log.
+ * Update status upon successful completion.
+ *
+ * Action: xmlhttp
+ * Subaction: walaend
+ *
+ * @return null
+ *
+ */
+function wala_end() {
+	global $context, $cachedir, $sourcedir;
+
+	// You have to be able to moderate the forum to do this.
+	isAllowedTo('admin_forum');
+
+	// Make sure the right person is putzing...
+	checkSession();
+
+	// if file system or post issues encountered, return a 500
+	$issues = false;
+
+	// Gonna need this...
+	require_once($sourcedir . '/WALAnalyzerModel.php');
+
+	// Let's use our own subdir...
+	$temp_dir = $cachedir . '/wala';
+	if (!is_dir($temp_dir)) {
+		if (@mkdir($temp_dir, 0755) === false)
+			$issues = true;
+	}
+
+	// If POST fails due to network settings issues, these aren't set...
+	$file_name = '';
+	if (isset($_POST['name']) && is_string($_POST['name']))
+		$file_name = $_POST['name'];
+	else
+		$issues = true;
+
+	$file_type = '';
+	if (isset($_POST['file_type']) && is_string($_POST['file_type']))
+		$file_type = $_POST['file_type'];
+	else
+		$issues = true;
+
+	// Update the file status info...
+	if (!$issues ) {
 		start_transaction();
 		if ($file_type === 'asn') {
 			// Also load wala_asns from wala_dbip_asn...
@@ -594,6 +703,8 @@ function wala_import() {
 		}
 		elseif ($file_type === 'country')
 			update_status('country', $file_name, time());
+		elseif ($file_type === 'log')
+			update_status('log', $file_name, time());
 		commit();
 	}
 
@@ -637,7 +748,7 @@ function wala_members() {
 
 	// Gonna need this...
 	require_once($sourcedir . '/WALAnalyzerModel.php');
-	
+
 	// How many members total?
 	$reccount = count_smf_members();
 
@@ -864,11 +975,6 @@ function wala_log_attr() {
 			update_web_access_log($entry_info);
 		}
 		commit();
-	}
-
-	// If we're done, update the file status info...
-	if (!$issues && ($index == $chunkct - 1)) {
-		update_status('log', $file_name, time());
 	}
 
 	// For a simple generic yes/no response

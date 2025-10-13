@@ -36,6 +36,43 @@ async function walaUpload(file_type) {
 	document.getElementById(prev_dt).textContent = '';
 	disable_controls();
 
+	// Start the process - prework on the server side, like clean files...
+	document.getElementById(file_type_status).textContent = wala_str_prep;
+	const formData = new FormData();
+	formData.append('file_type', file_type);
+	formData.append('name', file.name);
+	formData.append(smf_session_var, smf_session_id);
+
+	try {
+		// Note xml must be passed in url here otherwise SMF will return a normal http template
+		const response = await fetch(smf_scripturl + '?action=xmlhttp;sa=walastart;xml', {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: formData,
+		});
+		const result = await response.text();
+		if (!response.ok) {
+			console.error(wala_str_failed + ': ' + result);
+			new smc_Popup({
+				heading: wala_str_loader,
+				content: wala_str_failed + ': ' + result,
+				icon_class: 'main_icons error',
+			});
+			// If errors, kill the spinner & exit...
+			document.getElementById(file_type_wheel).style.visibility = 'hidden';
+			return;
+		}
+	} catch (error) {
+		console.error(wala_str_failed + ': ' + error);
+		new smc_Popup({
+			heading: wala_str_loader,
+			content: wala_str_failed,
+			icon_class: 'main_icons error',
+		});
+		document.getElementById(file_type_wheel).style.visibility = 'hidden';
+		return;
+	}
+
 	// Upload .gz file in chunks
 	for (let batchStart = 0; batchStart < file.size; batchStart += CHUNK_SIZE * CONCURRENCY) {
 		// Build one batch of up to CONCURRENCY chunks
@@ -197,8 +234,8 @@ async function walaUpload(file_type) {
 	// Update log attributes
 	index = 0;
 	totalChunks = 1;
-	document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_attribution;
 	if ((error_found === false) && (file_type === 'log')) {
+		document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_attribution;
 		while (index < totalChunks) {
 			const formData = new FormData();
 			formData.append('index', index);
@@ -241,6 +278,45 @@ async function walaUpload(file_type) {
 		}
 	}
 
+	// End the process - post work on the server side, like updating the status...
+	if (error_found === false) {
+		const formData = new FormData();
+		formData.append('file_type', file_type);
+		formData.append('name', file.name);
+		formData.append(smf_session_var, smf_session_id);
+			formData.append('name', file.name);
+
+		try {
+			// Note xml must be passed in url here otherwise SMF will return a normal http template
+			const response = await fetch(smf_scripturl + '?action=xmlhttp;sa=walaend;xml', {
+				method: 'POST',
+				credentials: 'same-origin',
+				body: formData,
+			});
+			const result = await response.text();
+			if (!response.ok) {
+				console.error(wala_str_failed + ': ' + result);
+				new smc_Popup({
+					heading: wala_str_loader,
+					content: wala_str_failed + ': ' + result,
+					icon_class: 'main_icons error',
+				});
+				// If errors, kill the spinner & exit...
+				document.getElementById(file_type_wheel).style.visibility = 'hidden';
+				return;
+			}
+		} catch (error) {
+			console.error(wala_str_failed + ': ' + error);
+			new smc_Popup({
+				heading: wala_str_loader,
+				content: wala_str_failed,
+				icon_class: 'main_icons error',
+			});
+			document.getElementById(file_type_wheel).style.visibility = 'hidden';
+			return;
+		}
+	}
+
 	// Last but not least, hide the spinner...
 	document.getElementById(file_type_wheel).style.visibility = 'hidden';
 	if (error_found === false) {
@@ -249,8 +325,8 @@ async function walaUpload(file_type) {
 			content: wala_str_success,
 			icon_class: 'main_icons reports',
 		});
-		// Give the success message a few secs of air time, then reload
-		setTimeout(() => {location.reload();}, 3000);
+		// Give the success message a couple secs of air time, then reload
+		setTimeout(() => {location.reload();}, 2000);
 	}
 }
 

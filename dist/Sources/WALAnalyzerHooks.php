@@ -8,7 +8,7 @@
  *	it under the terms of the GNU General Public License as published by
  *	the Free Software Foundation, either version 3 of the License, or
  *	(at your option) any later version.
- *	
+ *
  *	This software is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -69,9 +69,12 @@ function wala_admin_menu(&$menu)
 
 function wala_simple_actions(&$simpleActions, &$simpleAreas, &$simpleSubActions, &$extraParams, &$xmlActions)
 {
+	$xmlActions[] = 'walastart';
 	$xmlActions[] = 'walachunk';
 	$xmlActions[] = 'walaprep';
 	$xmlActions[] = 'walaimport';
+	$xmlActions[] = 'walaend';
+
 	$xmlActions[] = 'walamemb';
 	$xmlActions[] = 'walamattr';
 	$xmlActions[] = 'walalattr';
@@ -89,9 +92,12 @@ function wala_simple_actions(&$simpleActions, &$simpleAreas, &$simpleSubActions,
  */
 function wala_XMLhttpMain_subActions(&$subaction_array)
 {
+	$subaction_array['walastart'] = 'wala_start';
 	$subaction_array['walachunk'] = 'wala_chunk';
 	$subaction_array['walaprep'] = 'wala_prep';
 	$subaction_array['walaimport'] = 'wala_import';
+	$subaction_array['walaend'] = 'wala_end';
+
 	$subaction_array['walamemb'] = 'wala_members';
 	$subaction_array['walamattr'] = 'wala_memb_attr';
 	$subaction_array['walalattr'] = 'wala_log_attr';
