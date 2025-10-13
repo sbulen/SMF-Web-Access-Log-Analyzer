@@ -17,6 +17,8 @@ This tool also requires use of two free databases, the DBIP lite databases, foun
  - DBIP - IP to Country Lite, the csv version, must be loaded
  - DBIP - IP to ASN Lite, the csv version, must be loaded
 
+A special thanks to @live627 for excellent input on performance & how to speed things up.
+
 [b]Process:[/b]
  1. The first step is to download the DBIP ASN & Country lite csv databases, and load them.
  2. Next, load your forum member info.  ASN & Country are assigned to members based on IP.
