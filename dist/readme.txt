@@ -39,3 +39,4 @@ This tool also requires use of two free databases, the DBIP lite databases, foun
  - v1.0.0 Initial Commit
  - v1.0.1 Removed unused caching code
  - v1.0.2 Transactions for bulk inserts
+ - v1.0.3 Improve upload & import speed
