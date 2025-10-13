@@ -25,6 +25,10 @@ async function walaUpload(file_type) {
 	let index = 1;
 	let uploadedChunks = 0;
 
+	// Number of parallel uploads at a time
+	// Not too many so we don't slam the server
+	const CONCURRENCY = 8;
+
 	// Start the spinner...
 	document.getElementById(file_type_wheel).style.visibility = 'visible';
 	document.getElementById(file_type_status).textContent = Math.round(100*uploadedChunks/totalChunks) + wala_str_uploaded;
@@ -33,40 +37,56 @@ async function walaUpload(file_type) {
 	disable_controls();
 
 	// Upload .gz file in chunks
-	while (start < file.size) {
-		const chunk = file.slice(start, end);
+	for (let batchStart = 0; batchStart < file.size; batchStart += CHUNK_SIZE * CONCURRENCY) {
+		// Build one batch of up to CONCURRENCY chunks
+		let batch = [];
+		for (let j = 0; j < CONCURRENCY; j++) {
+			const start = batchStart + (j * CHUNK_SIZE);
+			if (start >= file.size) break;
+			const end = Math.min(start + CHUNK_SIZE, file.size);
 
-		const formData = new FormData();
-		formData.append('chunk', chunk);
-		formData.append('file_type', file_type);
-		formData.append('name', file.name);
-		formData.append('index', index);
-		formData.append(smf_session_var, smf_session_id);
+			const chunk = file.slice(start, end);
+			const formData = new FormData();
+			formData.append('chunk', chunk);
+			formData.append('file_type', file_type);
+			formData.append('name', file.name);
+			formData.append('index', (start / CHUNK_SIZE) + 1);
+			formData.append(smf_session_var, smf_session_id);
 
-		// Note xml must be passed otherwise SMF will return a normal http template
-		try {
-			const response = await fetch(smf_scripturl + '?action=xmlhttp;sa=walachunk;xml', {
-				method: 'POST',
-				credentials: 'same-origin',
-				body: formData, // Browser sets Content-Type: multipart/form-data
-			});
-			const result = await response.text();
-			if (response.ok) {
-				uploadedChunks++;
-				document.getElementById(file_type_status).textContent = Math.round(100*uploadedChunks/totalChunks) + wala_str_uploaded;
-			} else {
-				// Note if errors are encountered up here, chunks won't match below...
-				console.error(wala_str_error_chunk + ' ' + index);
-				break;
-			}
-		} catch (error) {
-			console.error(wala_str_error_chunk + ' ' + index + ': ' + error);
-			break;
+			batch.push({ formData, index: (start / CHUNK_SIZE) + 1 });
 		}
 
-		start = end;
-		end = start + CHUNK_SIZE;
-		index++;
+		// Wait for the whole batch to finish before moving to next batch
+		try {
+			await Promise.all(batch.map(({ formData, index }) =>
+				// Note xml must be passed otherwise SMF will return a normal http template
+				fetch(smf_scripturl + '?action=xmlhttp;sa=walachunk;xml', {
+					method: 'POST',
+					credentials: 'same-origin',
+					body: formData, // Browser sets Content-Type: multipart/form-data
+				})
+				.then(async response => {
+					if (!response.ok) {
+						return response.text().then(msg => {
+							throw new Error('Chunk ' + index + ' failed: ' + msg);
+						});
+					}
+					uploadedChunks++;
+					document.getElementById(file_type_status).textContent =
+						Math.round(100 * uploadedChunks / totalChunks) + wala_str_uploaded;
+				})
+			));
+
+		} catch (error) {
+			console.error(wala_str_error_chunk + ': ' + error);
+			document.getElementById(file_type_wheel).style.visibility = 'hidden';
+			new smc_Popup({
+				heading: wala_str_loader,
+				content: wala_str_failed,
+				icon_class: 'main_icons error',
+			});
+			return;
+		}
 	}
 
 	// Prep for import - split up .gz into .csvs & cache the lookups...
@@ -95,7 +115,7 @@ async function walaUpload(file_type) {
 				new smc_Popup({
 					heading: wala_str_loader,
 					content: wala_str_failed + ': ' + result,
-					icon_class: "main_icons error",
+					icon_class: 'main_icons error',
 				});
 				// If errors, kill the spinner & exit...
 				document.getElementById(file_type_wheel).style.visibility = 'hidden';
@@ -106,7 +126,7 @@ async function walaUpload(file_type) {
 			new smc_Popup({
 				heading: wala_str_loader,
 				content: wala_str_failed,
-				icon_class: "main_icons error",
+				icon_class: 'main_icons error',
 			});
 			document.getElementById(file_type_wheel).style.visibility = 'hidden';
 			return;
@@ -116,56 +136,62 @@ async function walaUpload(file_type) {
 		new smc_Popup({
 			heading: wala_str_loader,
 			content: wala_str_failed,
-			icon_class: "main_icons error",
+			icon_class: 'main_icons error',
 		});
 		document.getElementById(file_type_wheel).style.visibility = 'hidden';
 		return;
 	}
 
-	// Import csv chunks one at a time
-	index = 0;
-	document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_imported;
+	// Import csv chunks in parallel batches
 	let error_found = false;
-	index = 1;
-	while (index <= totalChunks) {
-		const formData = new FormData();
-		formData.append('file_type', file_type);
-		formData.append('name', file.name);
-		formData.append('total_chunks', totalChunks);
-		formData.append('index', index);
-		formData.append(smf_session_var, smf_session_id);
+	let importedChunks = 0;
 
-		try {
-			// Note xml must be passed otherwise SMF will return a normal http template
-			const response = await fetch(smf_scripturl + '?action=xmlhttp;sa=walaimport;xml', {
+	for (let batchStart = 1; batchStart <= totalChunks; batchStart += CONCURRENCY) {
+		// Build one batch of up to CONCURRENCY requests
+		const batch = [];
+		for (let j = 0; j < CONCURRENCY; j++) {
+			const index = batchStart + j;
+			if (index > totalChunks) break;
+
+			const formData = new FormData();
+			formData.append('file_type', file_type);
+			formData.append('name', file.name);
+			formData.append('total_chunks', totalChunks);
+			formData.append('index', index);
+			formData.append(smf_session_var, smf_session_id);
+
+			batch.push({ formData, index });
+		}
+
+		// Wait for all requests in this batch to complete
+		await Promise.all(batch.map(({ formData, index }) =>
+			fetch(smf_scripturl + '?action=xmlhttp;sa=walaimport;xml', {
 				method: 'POST',
 				credentials: 'same-origin',
-				body: formData,
-			});
-			const result = await response.text();
-			if (response.ok) {
-				document.getElementById(file_type_status).textContent = Math.round(100*index/totalChunks) + wala_str_imported;
-			} else {
-				console.error(wala_str_failed);
+				body: formData
+			})
+			.then(response => response.text().then(result => {
+				if (!response.ok) {
+					throw new Error(result || wala_str_failed);
+				}
+				importedChunks++;
+				document.getElementById(file_type_status).textContent =
+					Math.round(100 * importedChunks / totalChunks) + wala_str_imported;
+			}))
+			.catch(error => {
+				console.error(wala_str_failed + ': ' + error);
 				new smc_Popup({
 					heading: wala_str_loader,
 					content: wala_str_failed,
-					icon_class: "main_icons error",
+					icon_class: 'main_icons error',
 				});
 				error_found = true;
-				break;
-			}
-		} catch (error) {
-			console.error(wala_str_failed + ': ' + error);
-			new smc_Popup({
-				heading: wala_str_loader,
-				content: wala_str_failed,
-				icon_class: "main_icons error",
-			});
-			error_found = true;
+			})
+		));
+
+		if (error_found) {
 			break;
 		}
-		index++;
 	}
 
 	// Update log attributes
@@ -196,7 +222,7 @@ async function walaUpload(file_type) {
 					new smc_Popup({
 						heading: wala_str_loader,
 						content: wala_str_failed + ': ' + result,
-						icon_class: "main_icons error",
+						icon_class: 'main_icons error',
 					});
 					error_found = true;
 					break;
@@ -206,7 +232,7 @@ async function walaUpload(file_type) {
 				new smc_Popup({
 					heading: wala_str_loader,
 					content: wala_str_failed,
-					icon_class: "main_icons error",
+					icon_class: 'main_icons error',
 				});
 				error_found = true;
 				break;
@@ -221,7 +247,7 @@ async function walaUpload(file_type) {
 		new smc_Popup({
 			heading: wala_str_loader,
 			content: wala_str_success,
-			icon_class: "main_icons reports",
+			icon_class: 'main_icons reports',
 		});
 		// Give the success message a few secs of air time, then reload
 		setTimeout(() => {location.reload();}, 3000);
@@ -273,7 +299,7 @@ async function walaMemberSync() {
 				new smc_Popup({
 					heading: wala_str_loader,
 					content: wala_str_failed + ': ' + result,
-					icon_class: "main_icons error",
+					icon_class: 'main_icons error',
 				});
 				error_found = true;
 				break;
@@ -283,7 +309,7 @@ async function walaMemberSync() {
 			new smc_Popup({
 				heading: wala_str_loader,
 				content: wala_str_failed,
-				icon_class: "main_icons error",
+				icon_class: 'main_icons error',
 			});
 			error_found = true;
 			break;
@@ -317,7 +343,7 @@ async function walaMemberSync() {
 					new smc_Popup({
 						heading: wala_str_loader,
 						content: wala_str_failed + ': ' + result,
-						icon_class: "main_icons error",
+						icon_class: 'main_icons error',
 					});
 					error_found = true;
 					break;
@@ -327,7 +353,7 @@ async function walaMemberSync() {
 				new smc_Popup({
 					heading: wala_str_loader,
 					content: wala_str_failed,
-					icon_class: "main_icons error",
+					icon_class: 'main_icons error',
 				});
 				error_found = true;
 				break;
@@ -342,7 +368,7 @@ async function walaMemberSync() {
 		new smc_Popup({
 			heading: wala_str_loader,
 			content: wala_str_success,
-			icon_class: "main_icons reports",
+			icon_class: 'main_icons reports',
 		});
 		// Give the success message a few secs of air time, then reload
 		setTimeout(() => {location.reload();}, 3000);
