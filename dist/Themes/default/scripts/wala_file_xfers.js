@@ -37,7 +37,7 @@ async function walaUpload(file_type) {
 	disable_controls();
 
 	// Start the process - prework on the server side, like clean files...
-	document.getElementById(file_type_status).textContent = wala_str_prep;
+	document.getElementById(file_type_status).textContent = wala_str_upprep;
 	const formData = new FormData();
 	formData.append('file_type', file_type);
 	formData.append('name', file.name);

@@ -24,6 +24,7 @@ $txt['wala_file_error'] = 'Invalid file format importing WALA input';
 
 // Processing status (all passed to js)
 $txt['wala_loader'] = 'Wala File Loader';
+$txt['wala_upprep'] = 'Preparing for upload...';
 $txt['wala_uploaded'] = '% uploaded';
 $txt['wala_prep'] = 'Preparing for import...';
 $txt['wala_imported'] = '% imported';

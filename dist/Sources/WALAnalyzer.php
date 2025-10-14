@@ -141,6 +141,7 @@ function wala_load() {
 	// JS vars for user info display
 	addJavaScriptVar('wala_chunk_size', $wala_chunk_size, false);
 	addJavaScriptVar('wala_str_loader', $txt['wala_loader'], true);
+	addJavaScriptVar('wala_str_upprep', $txt['wala_upprep'], true);
 	addJavaScriptVar('wala_str_uploaded', $txt['wala_uploaded'], true);
 	addJavaScriptVar('wala_str_prep', $txt['wala_prep'], true);
 	addJavaScriptVar('wala_str_imported', $txt['wala_imported'], true);
