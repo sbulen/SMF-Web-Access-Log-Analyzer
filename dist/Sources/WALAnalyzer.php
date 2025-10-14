@@ -930,8 +930,8 @@ function wala_log_attr() {
 		// Even a small chunk of users, sorted by IP, can retrieve a large # of asn/country rows
 		$reccount = count_web_access_log();
 		$commit_rec_count = ceil($reccount/20);
-		if ($commit_rec_count > 20000)
-			$commit_rec_count = 20000;
+		if ($commit_rec_count > 10000)
+			$commit_rec_count = 10000;
 		$chunkct = ceil($reccount/$commit_rec_count);
 
 		$offset = $index * $commit_rec_count;
