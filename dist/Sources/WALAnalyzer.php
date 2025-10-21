@@ -1000,6 +1000,8 @@ function wala_log_attr() {
  *
  */
 function wala_load_asn($filename = '') {
+	global $smcFunc;
+
 	$fp = @fopen($filename, 'r');
 	$buffer = @fgetcsv($fp, null, ",", "\"", "\\");
 	$inserts = array();
@@ -1020,7 +1022,7 @@ function wala_load_asn($filename = '') {
 			$buffer[0],
 			$buffer[1],
 			$buffer[2],
-			$buffer[3],
+			$smcFunc['htmlspecialchars']($buffer[3]),
 		);
 		$buffer = @fgetcsv($fp, null, ",", "\"", "\\");
 	}
@@ -1040,6 +1042,8 @@ function wala_load_asn($filename = '') {
  *
  */
 function wala_load_country($filename = '') {
+	global $smcFunc;
+
 	$fp = @fopen($filename, 'r');
 	$buffer = @fgetcsv($fp, null, ",", "\"", "\\");
 	$inserts = array();
@@ -1058,7 +1062,7 @@ function wala_load_country($filename = '') {
 			$buffer[1],
 			$buffer[0],
 			$buffer[1],
-			$buffer[2],
+			$smcFunc['htmlspecialchars']($buffer[2]),
 		);
 		$buffer = @fgetcsv($fp, null, ",", "\"", "\\");
 	}
@@ -1085,27 +1089,43 @@ function wala_load_log($filename = '') {
 	$inserts = array();
 
 	while ($buffer !== false) {
-		// datetime, in apache common log format
+		// Uploaded from random sources????  Let's make sure we're good...
+		// Check the IP...
+		if (!filter_var($buffer[0], FILTER_VALIDATE_IP))
+			return true;
+
+		// Check the ints...
+		if (!is_numeric($buffer[6]) || !is_numeric($buffer[7]))
+			return true;
+
+		// Check the date & time, ensure apache common log format
 		$dt_string = substr($buffer[3] . $buffer[4], 1, -1);
 		$dti = DateTimeImmutable::createFromFormat('d/M/Y:H:i:s P', $dt_string);
+		if ($dti === false)
+			return true;
+
+		// Check the strings...
+		if (!is_string($buffer[1]) || !is_string($buffer[2]) || !is_string($buffer[5]) || !is_string($buffer[8]) || !is_string($buffer[9]))
+			return true;
+
 		$inserts[] = array(
 			// The first fields are common when the apache standard logfile is used; ignore the others in the csv, as they vary a lot
-			$buffer[0],								// ip packed
-			$buffer[1],								// client (usually unused)
-			$buffer[2],								// requestor (usually unused)
-			substr($buffer[3], 1),					// date timestamp, strip the [
-			substr($buffer[4], 0, -1),				// tz, strip the ]
-			$buffer[5],								// request
-			(int) $buffer[6],						// status
-			(int) $buffer[7],						// size
-			$buffer[8],								// referrer
-			$buffer[9],								// useragent
+			$buffer[0],									// ip packed
+			$smcFunc['htmlspecialchars']($buffer[1]),	// client (usually unused)
+			$smcFunc['htmlspecialchars']($buffer[2]),	// requestor (usually unused)
+			substr($buffer[3], 1),						// date timestamp, strip the [
+			substr($buffer[4], 0, -1),					// tz, strip the ]
+			$smcFunc['htmlspecialchars']($buffer[5]),	// request
+			(int) $buffer[6],							// status
+			(int) $buffer[7],							// size
+			$smcFunc['htmlspecialchars']($buffer[8]),	// referrer
+			$smcFunc['htmlspecialchars']($buffer[9]),	// useragent
 			// These fields are calc'd here...
-			$buffer[0],								// ip display
-			get_request_type($buffer[5]),			// request_type
-			get_agent($buffer[9]),					// agent
-			get_browser_ver($buffer[9]),			// browser version
-			$dti->getTimestamp(),					// dt in unix epoch format
+			$buffer[0],									// ip display
+			get_request_type($buffer[5]),				// request_type
+			get_agent($buffer[9]),						// agent
+			get_browser_ver($buffer[9]),				// browser version
+			$dti->getTimestamp(),						// dt in unix epoch format
 		);
 		$buffer = fgetcsv($fp, null, " ", "\"", "\\");
 	}
