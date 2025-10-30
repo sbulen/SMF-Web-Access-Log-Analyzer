@@ -1100,8 +1100,8 @@ function wala_load_log($filename = '') {
 
 		// Check the date & time, ensure apache common log format
 		$dt_string = substr($buffer[3] . $buffer[4], 1, -1);
-		$dti = DateTimeImmutable::createFromFormat('d/M/Y:H:i:s P', $dt_string);
-		if ($dti === false)
+		$ts = parseApacheDateTimeImmCached($dt_string);
+		if ($ts === false)
 			return true;
 
 		// Check the strings...
@@ -1125,13 +1125,50 @@ function wala_load_log($filename = '') {
 			get_request_type($buffer[5]),				// request_type
 			get_agent($buffer[9]),						// agent
 			get_browser_ver($buffer[9]),				// browser version
-			$dti->getTimestamp(),						// dt in unix epoch format
+			$ts,										// dt in unix epoch format
 		);
 		$buffer = fgetcsv($fp, null, " ", "\"", "\\");
 	}
 	insert_log($inserts);
 	fclose($fp);
 	return false;
+}
+
+/**
+ * Cached DateTimeImmutable approach.
+ */
+function parseApacheDateTimeImmCached($s) {
+	static $day_cache = [];
+	static $time_cache = [];
+
+	// Expected format: 25/Oct/2025:12:34:56 +0000
+	if (strlen($s) !== 26) {
+		return false;
+	}
+
+	// Using fixed string offsets here is much faster than a regex
+	$day_str = substr($s, 0, 11);   // "25/Oct/2025"
+	$h = substr($s, 12, 2);         // "12"
+	$i = substr($s, 15, 2);         // "34"
+	$sec = substr($s, 18, 2);       // "56"
+	$tz = substr($s, 20, 5);        // "+0000"
+
+	$day_key = $day_str . $tz;
+	$time_key = $h * 3600 + $i * 60 + $sec;
+
+	if (!isset($day_cache[$day_key])) {
+		$dti = DateTimeImmutable::createFromFormat('d/M/Y H:i:s O', $day_str . ' 00:00:00 ' . $tz);
+		if (!$dti) {
+			return false;
+		}
+		$day_cache[$day_key] = $dti->getTimestamp();
+	}
+
+	if (!isset($time_cache[$time_key])) {
+		$time_cache[$time_key] = $time_key;
+	}
+
+	return $day_cache[$day_key] + $time_cache[$time_key];
 }
 
 /**
