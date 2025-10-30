@@ -1088,6 +1088,11 @@ function wala_load_log($filename = '') {
 	$buffer = @fgetcsv($fp, null, " ", "\"", "\\");
 	$inserts = array();
 
+	// Static caches for repeated lookups
+	static $req_cache = array();
+	static $agent_cache = array();
+	static $browser_cache = array();
+
 	while ($buffer !== false) {
 		// Uploaded from random sources????  Let's make sure we're good...
 		// Check the IP...
@@ -1108,24 +1113,38 @@ function wala_load_log($filename = '') {
 		if (!is_string($buffer[1]) || !is_string($buffer[2]) || !is_string($buffer[5]) || !is_string($buffer[8]) || !is_string($buffer[9]))
 			return true;
 
+		$request = $buffer[5];
+		$user_agent = $buffer[9];
+
+		// Cached lookups
+		if (!isset($req_cache[$request])) {
+			$req_cache[$request] = get_request_type($request);
+		}
+		if (!isset($agent_cache[$user_agent])) {
+			$agent_cache[$user_agent] = get_agent($user_agent);
+		}
+		if (!isset($browser_cache[$user_agent])) {
+			$browser_cache[$user_agent] = get_browser_ver($user_agent);
+		}
+
 		$inserts[] = array(
 			// The first fields are common when the apache standard logfile is used; ignore the others in the csv, as they vary a lot
-			$buffer[0],									// ip packed
-			$smcFunc['htmlspecialchars']($buffer[1]),	// client (usually unused)
-			$smcFunc['htmlspecialchars']($buffer[2]),	// requestor (usually unused)
-			substr($buffer[3], 1),						// date timestamp, strip the [
-			substr($buffer[4], 0, -1),					// tz, strip the ]
-			$smcFunc['htmlspecialchars']($buffer[5]),	// request
-			(int) $buffer[6],							// status
-			(int) $buffer[7],							// size
-			$smcFunc['htmlspecialchars']($buffer[8]),	// referrer
-			$smcFunc['htmlspecialchars']($buffer[9]),	// useragent
+			$buffer[0],                                  // ip packed
+			$smcFunc['htmlspecialchars']($buffer[1]),    // client (usually unused)
+			$smcFunc['htmlspecialchars']($buffer[2]),    // requestor (usually unused)
+			substr($buffer[3], 1),                       // date timestamp, strip the [
+			substr($buffer[4], 0, -1),                   // tz, strip the ]
+			$smcFunc['htmlspecialchars']($buffer[5]),    // request
+			(int) $buffer[6],                            // status
+			(int) $buffer[7],                            // size
+			$smcFunc['htmlspecialchars']($buffer[8]),    // referrer
+			$smcFunc['htmlspecialchars']($buffer[9]),    // useragent
 			// These fields are calc'd here...
-			$buffer[0],									// ip display
-			get_request_type($buffer[5]),				// request_type
-			get_agent($buffer[9]),						// agent
-			get_browser_ver($buffer[9]),				// browser version
-			$dti->getTimestamp(),						// dt in unix epoch format
+			$buffer[0],                                  // ip display
+			$req_cache[$request],                        // request type
+			$agent_cache[$user_agent],                   // agent
+			$browser_cache[$user_agent],                 // browser version
+			$dti->getTimestamp(),                        // dt in unix epoch format
 		);
 		$buffer = fgetcsv($fp, null, " ", "\"", "\\");
 	}
@@ -1319,92 +1338,65 @@ function get_username($ip_packed) {
  *
  */
 function get_request_type($request) {
-	if (stripos($request, 'area=alerts_popup') !== false)
-		$request_type = 'Alerts';
-	elseif (stripos($request, 'type=rss') !== false)
-		$request_type = 'RSS';
-	elseif (stripos($request, 'action=admin') !== false)
-		$request_type = 'admin';
-	elseif (stripos($request, 'action=keepalive') !== false)
-		$request_type = 'Keepalive';
-	elseif (stripos($request, 'action=printpage') !== false)
-		$request_type = 'Print';
-	elseif (stripos($request, 'action=recent') !== false)
-		$request_type = 'Recent';
-	elseif (stripos($request, 'action=unread') !== false)
-		$request_type = 'Unread';
-	elseif (stripos($request, 'action=likes') !== false)
-		$request_type = 'Likes';
-	elseif (stripos($request, 'action=dlattach') !== false)
-		$request_type = 'Attach';
-	elseif (stripos($request, 'action=quotefast') !== false)
-		$request_type = 'Quote';
-	elseif (stripos($request, 'action=markasread') !== false)
-		$request_type = 'MarkRead';
-	elseif (stripos($request, 'action=quickmod2') !== false)
-		$request_type = 'Modify';
-	elseif (stripos($request, 'action=profile') !== false)
-		$request_type = 'Profile';
-	elseif (stripos($request, 'action=pm') !== false)
-		$request_type = 'PM';
-	elseif (stripos($request, 'action=xml') !== false)
-		$request_type = 'xml';
-	elseif (stripos($request, 'action=.xml') !== false)
-		$request_type = 'xml';
-	elseif (stripos($request, 'action=attbr') !== false)
-		$request_type = 'Attachment Browser';
-	elseif (stripos($request, 'action=search') !== false)
-		$request_type = 'Search';
-	elseif (stripos($request, 'action=signup') !== false)
-		$request_type = 'Signup';
-	elseif (stripos($request, 'action=register') !== false)
-		$request_type = 'Signup';
-	elseif (stripos($request, 'action=join') !== false)
-		$request_type = 'Signup';
-	elseif (stripos($request, 'action=login') !== false)
-		$request_type = 'Login';
-	elseif (stripos($request, 'action=logout') !== false)
-		$request_type = 'Logout';
-	elseif (stripos($request, 'action=verificationcode') !== false)
-		$request_type = 'Login';
-	elseif (stripos($request, '.msg') !== false)
-		$request_type = 'Message';
-	elseif (stripos($request, 'msg=') !== false)
-		$request_type = 'Message';
-	elseif (stripos($request, 'topic=') !== false)
-		$request_type = 'Topic';
-	elseif (stripos($request, 'board=') !== false)
-		$request_type = 'Board';
-	elseif (stripos($request, ';wwwRedirect') !== false)
-		$request_type = 'Redirect';
-	elseif (stripos($request, '/smf/custom_avatar') !== false)
-		$request_type = 'Avatar';
-	elseif (stripos($request, '/smf/cron.php?ts=') !== false)
-		$request_type = 'Cron';
-	elseif (stripos($request, '/smf/index.php ') !== false)
-		$request_type = 'Board Index';
-	elseif (stripos($request, '/smf/proxy.php') !== false)
-		$request_type = 'Proxy';
-	elseif (stripos($request, '/smf/avatars') !== false)
-		$request_type = 'Avatar';
-	elseif (stripos($request, '/smf/Smileys') !== false)
-		$request_type = 'Smileys';
-	elseif (stripos($request, '/smf/Themes') !== false)
-		$request_type = 'Theme';
-	elseif (stripos($request, '/favicon.ico') !== false)
-		$request_type = 'Favicon';
-	elseif (stripos($request, '/robots.txt') !== false)
-		$request_type = 'robots.txt';
-	elseif (stripos($request, '/sitemap') !== false)
-		$request_type = 'Sitemap';
-	elseif (stripos($request, '/phpmyadmin') !== false)
-		$request_type = 'Admin';
-	elseif (stripos($request, '/admin') !== false)
-		$request_type = 'Admin';
-	else
-		$request_type = 'Other';
+	static $map = array(
+		'area=alerts_popup'      => 'Alerts',
+		'type=rss'               => 'RSS',
+		'action=admin'           => 'Admin',
+		'action=keepalive'       => 'Keepalive',
+		'action=printpage'       => 'Print',
+		'action=recent'          => 'Recent',
+		'action=unread'          => 'Unread',
+		'action=likes'           => 'Likes',
+		'action=dlattach'        => 'Attach',
+		'action=quotefast'       => 'Quote',
+		'action=markasread'      => 'MarkRead',
+		'action=quickmod2'       => 'Modify',
+		'action=profile'         => 'Profile',
+		'action=pm'              => 'PM',
+		'action=xml'             => 'xml',
+		'action=.xml'            => 'xml',
+		'action=attbr'           => 'Attachment Browser',
+		'action=search'          => 'Search',
+		'action=signup'          => 'Signup',
+		'action=register'        => 'Signup',
+		'action=join'            => 'Signup',
+		'action=login'           => 'Login',
+		'action=logout'          => 'Logout',
+		'action=verificationcode'=> 'Login',
+		'.msg'                   => 'Message',
+		'msg='                   => 'Message',
+		'topic='                 => 'Topic',
+		'board='                 => 'Board',
+		';wwwRedirect'           => 'Redirect',
+		'/smf/custom_avatar'     => 'Avatar',
+		'/smf/cron.php?ts='      => 'Cron',
+		'/smf/index.php '        => 'Board Index',
+		'/smf/proxy.php'         => 'Proxy',
+		'/smf/avatars'           => 'Avatar',
+		'/smf/Smileys'           => 'Smileys',
+		'/smf/Themes'            => 'Theme',
+		'/favicon.ico'           => 'Favicon',
+		'/robots.txt'            => 'robots.txt',
+		'/sitemap'               => 'Sitemap',
+		'/phpmyadmin'            => 'Admin',
+		'/admin'                 => 'Admin',
+	);
 
-	return $request_type;
+	static $regex = null;
+	if ($regex === null) {
+		$regex = $GLOBALS['modSettings']['wala_request_type_regex'] ?? null;
+	}
+	if ($regex === null) {
+		// Build one giant alternation regex
+		$regex = '/' . build_regex(array_keys($map), '/') . '/i';
+		updateSettings(['wala_request_type_regex' =>  $regex]);
+	}
+
+	if (preg_match($regex, $request, $m)) {
+		return $map[$m[0]] ?? 'Other';
+	}
+
+	return 'Other';
 }
 
 /**
@@ -1417,157 +1409,61 @@ function get_request_type($request) {
  * @return string $agent
  *
  */
-function get_agent($useragent) {
-	if ($useragent === '-')
-		$agent = 'BLANK';
-	elseif (stripos($useragent, '2ip bot') !== false)
-		$agent = '2ip bot';
-	elseif (stripos($useragent, '360Spider') !== false)
-		$agent = '360Spider';
-	elseif (stripos($useragent, 'AdsBot-Google') !== false)
-		$agent = 'AdsBot-Google';
-	elseif (stripos($useragent, 'AhrefsBot') !== false)
-		$agent = 'AhrefsBot';
-	elseif (stripos($useragent, 'AliyunSecBot') !== false)
-		$agent = 'AliyunSecBot';
-	elseif (stripos($useragent, 'Awario') !== false)
-		$agent = 'Awario';
-	elseif (stripos($useragent, 'amazonbot') !== false)
-		$agent = 'amazonbot';
-	elseif (stripos($useragent, 'applebot') !== false)
-		$agent = 'applebot';
-	elseif (stripos($useragent, 'ArchiveBot') !== false)
-		$agent = 'ArchiveBot';
-	elseif (stripos($useragent, 'BaiduSpider') !== false)
-		$agent = 'BaiduSpider';
-	elseif (stripos($useragent, 'bingbot') !== false)
-		$agent = 'bingbot';
-	elseif (stripos($useragent, 'BLEXBot') !== false)
-		$agent = 'BLEXBot';
-	elseif (stripos($useragent, 'Bravebot') !== false)
-		$agent = 'Bravebot';
-	elseif (stripos($useragent, 'Bytespider') !== false)
-		$agent = 'Bytespider';
-	elseif (stripos($useragent, 'Cincraw') !== false)
-		$agent = 'Cincraw';
-	elseif (stripos($useragent, 'claudebot') !== false)
-		$agent = 'claudebot';
-	elseif (stripos($useragent, 'coccocbot') !== false)
-		$agent = 'coccocbot';
-	elseif (stripos($useragent, 'commoncrawl') !== false)
-		$agent = 'commoncrawl';
-	elseif (stripos($useragent, 'dataforseo-bot') !== false)
-		$agent = 'dataforseo-bot';
-	elseif (stripos($useragent, 'Discordbot') !== false)
-		$agent = 'Discordbot';
-	elseif (stripos($useragent, 'DomainStatsBot') !== false)
-		$agent = 'DomainStatsBot';
-	elseif (stripos($useragent, 'DotBot') !== false)
-		$agent = 'DotBot';
-	elseif (stripos($useragent, 'DuckAssistBot') !== false)
-		$agent = 'DuckAssistBot';
-	elseif (stripos($useragent, 'duckduckbot') !== false)
-		$agent = 'duckduckbot';
-	elseif (stripos($useragent, 'DuckDuckGo-Favicons-Bot') !== false)
-		$agent = 'DuckDuckGo-Favicons-Bot';
-	elseif (stripos($useragent, 'facebookexternalhit') !== false)
-		$agent = 'facebookexternalhit';
-	elseif (stripos($useragent, 'Gaisbot') !== false)
-		$agent = 'Gaisbot';
-	elseif (stripos($useragent, 'Googlebot') !== false)
-		$agent = 'Googlebot';
-	elseif (stripos($useragent, 'GoogleOther') !== false)
-		$agent = 'GoogleOther';
-	elseif (stripos($useragent, 'google.com/bot') !== false)
-		$agent = 'google.com/bot';
-	elseif (stripos($useragent, 'HawaiiBot') !== false)
-		$agent = 'HawaiiBot';
-	elseif (stripos($useragent, 'iAskBot') !== false)
-		$agent = 'iAskBot';
-	elseif (stripos($useragent, 'keys-so-bot') !== false)
-		$agent = 'keys-so-bot';
-	elseif (stripos($useragent, 'LinerBot') !== false)
-		$agent = 'LinerBot';
-	elseif (stripos($useragent, 'meta-externalagent') !== false)
-		$agent = 'meta-externalagent';
-	elseif (stripos($useragent, 'MixrankBot') !== false)
-		$agent = 'MixrankBot';
-	elseif (stripos($useragent, 'mj12bot') !== false)
-		$agent = 'mj12bot';
-	elseif (stripos($useragent, 'MojeekBot') !== false)
-		$agent = 'MojeekBot';
-	elseif (stripos($useragent, 'msnbot') !== false)
-		$agent = 'msnbot';
-	elseif (stripos($useragent, 'openai') !== false)
-		$agent = 'openai';
-	elseif (stripos($useragent, 'petalbot') !== false)
-		$agent = 'petalbot';
-	elseif (stripos($useragent, 'Pinterestbot') !== false)
-		$agent = 'Pinterestbot';
-	elseif (stripos($useragent, 'python-requests') !== false)
-		$agent = 'python-requests';
-	elseif (stripos($useragent, 'Qwantbot') !== false)
-		$agent = 'Qwantbot';
-	elseif (stripos($useragent, 'redditbot') !== false)
-		$agent = 'redditbot';
-	elseif (stripos($useragent, 'RU_Bot') !== false)
-		$agent = 'RU_Bot';
-	elseif (stripos($useragent, 'Screaming Frog SEO Spider') !== false)
-		$agent = 'Screaming Frog SEO Spider';
-	elseif (stripos($useragent, 'SeekportBot') !== false)
-		$agent = 'SeekportBot';
-	elseif (stripos($useragent, 'SemrushBot') !== false)
-		$agent = 'SemrushBot';
-	elseif (stripos($useragent, 'seznambot') !== false)
-		$agent = 'seznambot';
-	elseif (stripos($useragent, 'SiteLockSpider') !== false)
-		$agent = 'SiteLockSpider';
-	elseif (stripos($useragent, 'Slack-ImgProxy') !== false)
-		$agent = 'Slack-ImgProxy';
-	elseif (stripos($useragent, 'Sogou') !== false)
-		$agent = 'Sogou';
-	elseif (stripos($useragent, 'StartmeBot') !== false)
-		$agent = 'StartmeBot';
-	elseif (stripos($useragent, 'SuperBot') !== false)
-		$agent = 'SuperBot';
-	elseif (stripos($useragent, 'TelegramBot') !== false)
-		$agent = 'TelegramBot';
-	elseif (stripos($useragent, 'Thinkbot') !== false)
-		$agent = 'Thinkbot';
-	elseif (stripos($useragent, 'TikTokSpider') !== false)
-		$agent = 'TikTokSpider';
-	elseif (stripos($useragent, 'trendictionbot') !== false)
-		$agent = 'trendictionbot';
-	elseif (stripos($useragent, 'Twitterbot') !== false)
-		$agent = 'Twitterbot';
-	elseif (stripos($useragent, 'TurnitinBot') !== false)
-		$agent = 'TurnitinBot';
-	elseif (stripos($useragent, 'WellKnownBot') !== false)
-		$agent = 'WellKnownBot';
-	elseif (stripos($useragent, 'WireReaderBot') !== false)
-		$agent = 'WireReaderBot';
-	elseif (stripos($useragent, 'wpbot') !== false)
-		$agent = 'wpbot';
-	elseif (stripos($useragent, 'yacybot') !== false)
-		$agent = 'yacybot';
-	elseif (stripos($useragent, 'yandex') !== false)
-		$agent = 'yandex';
-	elseif (stripos($useragent, 'YisouSpider') !== false)
-		$agent = 'YisouSpider';
-	elseif (stripos($useragent, 'ZoomBot') !== false)
-		$agent = 'ZoomBot';
-	elseif (stripos($useragent, 'zoominfobot') !== false)
-		$agent = 'zoominfobot';
-	elseif (stripos($useragent, 'spider') !== false)
-		$agent = 'Other bot';
-	elseif (stripos($useragent, 'bot') !== false)
-		$agent = 'Other bot';
-	elseif (stripos($useragent, 'crawl') !== false)
-		$agent = 'Other bot';
-	else
-		$agent = 'User';
+function get_agent($user_agent) {
+	if ($user_agent === '-') {
+		return 'BLANK';
+	}
 
-	return $agent;
+	$ua = strtolower($user_agent);
+
+	static $map = array(
+		'2ip bot' => '2ip bot', '360spider' => '360Spider', 'adsbot-google' => 'AdsBot-Google',
+		'ahrefsbot' => 'AhrefsBot', 'aliyunsecbot' => 'AliyunSecBot', 'awario' => 'Awario',
+		'amazonbot' => 'amazonbot', 'applebot' => 'applebot', 'archivebot' => 'ArchiveBot',
+		'baiduspider' => 'BaiduSpider', 'bingbot' => 'bingbot', 'blexbot' => 'BLEXBot',
+		'bravebot' => 'Bravebot', 'bytespider' => 'Bytespider', 'cincraw' => 'Cincraw',
+		'claudebot' => 'claudebot', 'coccocbot' => 'coccocbot', 'commoncrawl' => 'commoncrawl',
+		'dataforseo-bot' => 'dataforseo-bot', 'discordbot' => 'Discordbot',
+		'domainstatsbot' => 'DomainStatsBot', 'dotbot' => 'DotBot', 'duckassistbot' => 'DuckAssistBot',
+		'duckduckbot' => 'duckduckbot', 'duckduckgo-favicons-bot' => 'DuckDuckGo-Favicons-Bot',
+		'facebookexternalhit' => 'facebookexternalhit', 'gaisbot' => 'Gaisbot',
+		'googlebot' => 'Googlebot', 'googleother' => 'GoogleOther', 'google.com/bot' => 'google.com/bot',
+		'hawaiibot' => 'HawaiiBot', 'iaskbot' => 'iAskBot', 'keys-so-bot' => 'keys-so-bot',
+		'linerbot' => 'LinerBot', 'meta-externalagent' => 'meta-externalagent',
+		'mixrankbot' => 'MixrankBot', 'mj12bot' => 'mj12bot', 'mojeekbot' => 'MojeekBot',
+		'msnbot' => 'msnbot', 'openai' => 'openai', 'petalbot' => 'petalbot',
+		'pinterestbot' => 'Pinterestbot', 'python-requests' => 'python-requests',
+		'qwantbot' => 'Qwantbot', 'redditbot' => 'redditbot', 'ru_bot' => 'RU_Bot',
+		'screaming frog seo spider' => 'Screaming Frog SEO Spider', 'seekportbot' => 'SeekportBot',
+		'semrushbot' => 'SemrushBot', 'seznambot' => 'seznambot', 'sitelockspider' => 'SiteLockSpider',
+		'slack-imgproxy' => 'Slack-ImgProxy', 'sogou' => 'Sogou', 'startmebot' => 'StartmeBot',
+		'superbot' => 'SuperBot', 'telegrambot' => 'TelegramBot', 'thinkbot' => 'Thinkbot',
+		'tiktokspider' => 'TikTokSpider', 'trendictionbot' => 'trendictionbot', 'twitterbot' => 'Twitterbot',
+		'turnitinbot' => 'TurnitinBot', 'wellknownbot' => 'WellKnownBot', 'wirereaderbot' => 'WireReaderBot',
+		'wpbot' => 'wpbot', 'yacybot' => 'yacybot', 'yandex' => 'yandex', 'yisouspider' => 'YisouSpider',
+		'zoombot' => 'ZoomBot', 'zoominfobot' => 'zoominfobot',
+	);
+
+	static $regex = null;
+	if ($regex === null) {
+		$regex = $GLOBALS['modSettings']['wala_user_agent_regex'] ?? null;
+	}
+	if ($regex === null) {
+		// Build one giant alternation regex
+		$regex = '/' . build_regex(array_keys($map), '/') . '/i';
+		updateSettings(['wala_user_agent_regex' =>  $regex]);
+	}
+
+	if (preg_match($regex, $ua, $m)) {
+		return $map[$m[0]] ?? 'Other';
+	}
+
+	// Generic bot detection
+	if (str_contains($ua, 'spider') || str_contains($ua, 'bot') || str_contains($ua, 'crawl')) {
+		return 'Other bot';
+	}
+
+	return 'User';
 }
 
 /**
@@ -1580,26 +1476,12 @@ function get_agent($useragent) {
  * @return string $browser_ver
  *
  */
-function get_browser_ver($useragent) {
-	$browser_ver = '';
-	$matches = array();
+function get_browser_ver($user_agent) {
+	static $pattern = '/(?:(?:firefox|chrome|msie|safari|edga?|edgios|opera|vivaldi)\/\d{1,3}|mobile\/\d\d[a-z]\d\d\d\|safari\/\d{4,5})\b/i';
 
-	// Gets most browser versions here...
-	static $pattern1 = '~(?:firefox|chrome|msie|safari|edg|edga|edgios|opera|vivaldi)\/\d{1,3}\b~i';
-	if (preg_match($pattern1, $useragent, $matches))
-		$browser_ver = $matches[0];
+	if (preg_match($pattern, $user_agent, $m)) {
+		return $m[0];
+	}
 
-	// Second swipe at it, lots of iphones use this
-	static $pattern2 = '~(?:mobile)\/\d\d[a-z]\d\d\d\b~i';
-	if (empty($browser_ver))
-		if (preg_match($pattern2, $useragent, $matches))
-			$browser_ver = $matches[0];
-
-	// Third swipe at it, lots of iphones use this long version of a safari version
-	static $pattern3 = '~(?:safari)\/\d{4,5}\b~i';
-	if (empty($browser_ver))
-		if (preg_match($pattern3, $useragent, $matches))
-			$browser_ver = $matches[0];
-
-	return $browser_ver;
+	return '';
 }
