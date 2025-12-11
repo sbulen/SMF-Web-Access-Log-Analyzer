@@ -5,7 +5,7 @@ The goal is to provide insight into the source and nature of your web traffic.  
 
 This uses a very simple load-report approach, intended for a point-in time analysis.  If things fall out of date, you just reload them.
 
-Twenty standard reports are provided.  The database is simple enough that you can expand upon the reports yourself, writing your own queries.  Since all tables used in the report are separate from the SMF core tables, reporting & tweaking is safe and straightforward.  All you need is access to the tables directly within any query tool, such as adminer or phpmyadmin.
+Eleven standard reports are provided.  The database is simple enough that you can expand upon the reports yourself, writing your own queries.  Since all tables used in the report are separate from the SMF core tables, reporting & tweaking is safe and straightforward.  All you need is access to the tables directly within any query tool, such as adminer or phpmyadmin.
 
 Although it would be best to perform this analysis on a test copy of your SMF forum, if one is not available, it is safe to run on your production site.
 
