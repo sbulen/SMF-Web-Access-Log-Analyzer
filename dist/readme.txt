@@ -43,3 +43,4 @@ A special thanks to @live627 for excellent input on performance & how to speed t
  - v1.0.2 Transactions for bulk inserts
  - v1.0.3 Improve upload & import speed
  - v1.0.4 Tighten up some validations
+ - v1.0.5 Simplify & consolidate reports

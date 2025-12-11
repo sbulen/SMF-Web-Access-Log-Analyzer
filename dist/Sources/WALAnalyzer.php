@@ -186,85 +186,49 @@ function wala_reports() {
 	// Array with available reports
 	// Note some specific mysql syntax is xlated to pg later (e.g., from_unixtime())
 	$context['wala_reports'] = array(
-		'wala_rpt_ureqsxcountryui' => array(
-			'hdr' => array('requests', 'country', 'user count', 'last login'),
-			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, country FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY country), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, country FROM {db_prefix}wala_members GROUP BY country)  SELECT waltots.requests, waltots.country, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots LEFT JOIN memtots ON (waltots.country = memtots.country) ORDER BY waltots.requests DESC LIMIT 500',
+		'wala_rpt_reqsxcountryui' => array(
+			'hdr' => array('total requests', 'blocked', 'unblocked', 'country', 'user count', 'last login'),
+			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, COUNT(CASE WHEN status = 403 OR status = 429 THEN 1 ELSE NULL END) AS blocked, COUNT(CASE WHEN status = 403 OR status = 429 THEN NULL ELSE 1 END) AS unblocked, country FROM {db_prefix}wala_web_access_log GROUP BY country), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, country FROM {db_prefix}wala_members GROUP BY country) SELECT waltots.requests, waltots.blocked, waltots.unblocked, waltots.country, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots LEFT JOIN memtots ON (waltots.country = memtots.country) ORDER BY waltots.requests DESC LIMIT 500',
 		),
-		'wala_rpt_areqsxcountryui' => array(
-			'hdr' => array('requests', 'country', 'user count', 'last login'),
-			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, country FROM {db_prefix}wala_web_access_log GROUP BY country), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, country FROM {db_prefix}wala_members GROUP BY country) SELECT waltots.requests, waltots.country, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots LEFT JOIN memtots ON (waltots.country = memtots.country) ORDER BY waltots.requests DESC LIMIT 500',
+		'wala_rpt_reqsxasnui' => array(
+			'hdr' => array('total requests', 'blocked', 'unblocked', 'asn', 'asn name', 'user count', 'last login'),
+			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, COUNT(CASE WHEN status = 403 OR status = 429 THEN 1 ELSE NULL END) AS blocked, COUNT(CASE WHEN status = 403 OR status = 429 THEN NULL ELSE 1 END) AS unblocked, asn FROM {db_prefix}wala_web_access_log GROUP BY asn), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, asn FROM {db_prefix}wala_members GROUP BY asn) SELECT waltots.requests, waltots.blocked, waltots.unblocked, waltots.asn, a.asn_name, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots INNER JOIN {db_prefix}wala_asns a ON (waltots.asn = a.asn) LEFT JOIN memtots ON (waltots.asn = memtots.asn) ORDER BY waltots.requests DESC LIMIT 500',
 		),
-		'wala_rpt_ureqsxasnui' => array(
-			'hdr' => array('requests', 'asn', 'asn name', 'user count', 'last login'),
-			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, asn FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY asn), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, asn FROM {db_prefix}wala_members GROUP BY asn) SELECT waltots.requests, waltots.asn, a.asn_name, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots INNER JOIN {db_prefix}wala_asns a ON (waltots.asn = a.asn) LEFT JOIN memtots ON (waltots.asn = memtots.asn) ORDER BY waltots.requests DESC LIMIT 500',
+		'wala_rpt_reqsxagent' => array(
+			'hdr' => array('agent', 'total requests', 'blocked', 'unblocked'),
+			'sql' =>'SELECT agent, COUNT(*) AS requests, COUNT(CASE WHEN status = 403 OR status = 429 THEN 1 ELSE NULL END) AS blocked, COUNT(CASE WHEN status = 403 OR status = 429 THEN NULL ELSE 1 END) AS unblocked FROM {db_prefix}wala_web_access_log GROUP BY agent ORDER BY requests DESC LIMIT 500',
 		),
-		'wala_rpt_areqsxasnui' => array(
-			'hdr' => array('requests', 'asn', 'asn name', 'user count', 'last login'),
-			'sql' =>'WITH waltots AS (SELECT COUNT(*) AS requests, asn FROM {db_prefix}wala_web_access_log GROUP BY asn), memtots AS (SELECT COUNT(*) AS user_count, MAX(last_login) AS last_user_login, asn FROM {db_prefix}wala_members GROUP BY asn) SELECT waltots.requests, waltots.asn, a.asn_name, memtots.user_count, FROM_UNIXTIME(memtots.last_user_login) AS last_user_login FROM waltots INNER JOIN {db_prefix}wala_asns a ON (waltots.asn = a.asn) LEFT JOIN memtots ON (waltots.asn = memtots.asn) ORDER BY waltots.requests DESC LIMIT 500',
+		'wala_rpt_reqsxuser' => array(
+			'hdr' => array('username', 'total requests', 'blocked', 'unblocked'),
+			'sql' =>'SELECT username, COUNT(*) AS requests, COUNT(CASE WHEN status = 403 OR status = 429 THEN 1 ELSE NULL END) AS blocked, COUNT(CASE WHEN status = 403 OR status = 429 THEN NULL ELSE 1 END) AS unblocked FROM {db_prefix}wala_web_access_log GROUP BY username ORDER BY requests DESC LIMIT 500',
 		),
-		'wala_rpt_ureqsxagent' => array(
-			'hdr' => array('agent', 'requests'),
-			'sql' =>'SELECT agent, COUNT(*) as requests FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY agent ORDER BY requests DESC LIMIT 500',
+		'wala_rpt_reqsxbrowser' => array(
+			'hdr' => array('browser', 'total requests', 'blocked', 'unblocked'),
+			'sql' =>'SELECT browser_ver, COUNT(*) AS requests, COUNT(CASE WHEN status = 403 OR status = 429 THEN 1 ELSE NULL END) AS blocked, COUNT(CASE WHEN status = 403 OR status = 429 THEN NULL ELSE 1 END) AS unblocked FROM {db_prefix}wala_web_access_log GROUP BY browser_ver ORDER BY requests DESC LIMIT 500',
 		),
-		'wala_rpt_areqsxagent' => array(
-			'hdr' => array('agent', 'requests'),
-			'sql' =>'SELECT agent, COUNT(*) as requests FROM {db_prefix}wala_web_access_log GROUP BY agent ORDER BY requests DESC LIMIT 500',
+		'wala_rpt_ipsxcountry' => array(
+			'hdr' => array('country', 'total ips', 'blocked', 'unblocked'),
+			'sql' =>'SELECT country, COUNT(DISTINCT ip_packed) AS ips, COUNT(DISTINCT CASE WHEN status = 403 OR status = 429 THEN ip_packed ELSE NULL END) AS blocked, COUNT(DISTINCT CASE WHEN status = 403 OR status = 429 THEN NULL ELSE ip_packed END) AS unblocked FROM {db_prefix}wala_web_access_log GROUP BY country ORDER BY ips DESC LIMIT 500',
 		),
-		'wala_rpt_ureqsxuser' => array(
-			'hdr' => array('username', 'requests'),
-			'sql' =>'SELECT username, COUNT(*) as requests FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY username ORDER BY requests DESC LIMIT 500',
+		'wala_rpt_ipsxasn' => array(
+			'hdr' => array('asn', 'asn name', 'total ips', 'blocked', 'unblocked'),
+			'sql' =>'SELECT a.asn, a.asn_name, COUNT(DISTINCT ip_packed) AS ips, COUNT(DISTINCT CASE WHEN status = 403 OR status = 429 THEN ip_packed ELSE NULL END) AS blocked, COUNT(DISTINCT CASE WHEN status = 403 OR status = 429 THEN NULL ELSE ip_packed END) AS unblocked FROM {db_prefix}wala_web_access_log wal INNER JOIN {db_prefix}wala_asns a ON (wal.asn = a.asn) GROUP BY a.asn ORDER BY ips DESC LIMIT 500',
 		),
-		'wala_rpt_areqsxuser' => array(
-			'hdr' => array('username', 'requests'),
-			'sql' =>'SELECT username, COUNT(*) as requests FROM {db_prefix}wala_web_access_log GROUP BY username ORDER BY requests DESC LIMIT 500',
+		'wala_rpt_likesxcountry' => array(
+			'hdr' => array('country', 'total view likes', 'blocked', 'unblocked'),
+			'sql' =>'SELECT country, COUNT(*) AS requests, COUNT(CASE WHEN status = 403 OR status = 429 THEN 1 ELSE NULL END) AS blocked, COUNT(CASE WHEN status = 403 OR status = 429 THEN NULL ELSE 1 END) AS unblocked FROM {db_prefix}wala_web_access_log WHERE request LIKE \'%action=likes%\' AND request LIKE \'%sa=view%\' GROUP BY country ORDER BY requests DESC LIMIT 500',
 		),
-		'wala_rpt_ureqsxbrowser' => array(
-			'hdr' => array('browser', 'requests'),
-			'sql' =>'SELECT browser_ver, COUNT(*) as requests FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY browser_ver ORDER BY requests DESC LIMIT 500',
-		),
-		'wala_rpt_areqsxbrowser' => array(
-			'hdr' => array('browser', 'requests'),
-			'sql' =>'SELECT browser_ver, COUNT(*) as requests FROM {db_prefix}wala_web_access_log GROUP BY browser_ver ORDER BY requests DESC LIMIT 500',
-		),
-		'wala_rpt_uipsxcountry' => array(
-			'hdr' => array('country', 'ips'),
-			'sql' =>'SELECT country, COUNT(DISTINCT ip_packed) AS ips FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 GROUP BY country ORDER BY ips DESC LIMIT 500',
-		),
-		'wala_rpt_aipsxcountry' => array(
-			'hdr' => array('country', 'ips'),
-			'sql' =>'SELECT country, COUNT(DISTINCT ip_packed) AS ips FROM {db_prefix}wala_web_access_log GROUP BY country ORDER BY ips DESC LIMIT 500',
-		),
-		'wala_rpt_uipsxasn' => array(
-			'hdr' => array('asn', 'asn name', 'ips'),
-			'sql' =>'SELECT a.asn, a.asn_name, COUNT(DISTINCT ip_packed) AS ips FROM {db_prefix}wala_web_access_log wal INNER JOIN {db_prefix}wala_asns a ON (wal.asn = a.asn) WHERE status <> 403 AND status <> 429 GROUP BY a.asn ORDER BY ips DESC LIMIT 500',
-		),
-		'wala_rpt_aipsxasn' => array(
-			'hdr' => array('asn', 'asn name', 'ips'),
-			'sql' =>'SELECT a.asn, a.asn_name, COUNT(DISTINCT ip_packed) AS ips FROM {db_prefix}wala_web_access_log wal INNER JOIN {db_prefix}wala_asns a ON (wal.asn = a.asn) GROUP BY a.asn ORDER BY ips DESC LIMIT 500',
-		),
-		'wala_rpt_ulikesxcountry' => array(
-			'hdr' => array('country', 'view likes'),
-			'sql' =>'SELECT country, COUNT(*) AS requests FROM {db_prefix}wala_web_access_log WHERE status <> 403 AND status <> 429 AND request LIKE \'action=likes%\' AND request LIKE \'%sa=view%\' GROUP BY country ORDER BY requests DESC LIMIT 500',
-		),
-		'wala_rpt_alikesxcountry' => array(
-			'hdr' => array('country', 'view likes'),
-			'sql' =>'SELECT country, COUNT(*) AS requests FROM {db_prefix}wala_web_access_log WHERE request LIKE \'%action=likes%\' AND request LIKE \'%sa=view%\' GROUP BY country ORDER BY requests DESC LIMIT 500',
-		),
-		'wala_rpt_ulikesxasn' => array(
-			'hdr' => array('asn', 'asn name', 'view likes'),
-			'sql' =>'SELECT a.asn, a.asn_name, COUNT(*) AS requests FROM {db_prefix}wala_web_access_log wal INNER JOIN {db_prefix}wala_asns a ON (wal.asn = a.asn) WHERE status <> 403 AND status <> 429 AND request LIKE \'%action=likes%\' AND request LIKE \'%sa=view%\' GROUP BY a.asn ORDER BY requests DESC LIMIT 500',
-		),
-		'wala_rpt_alikesxasn' => array(
-			'hdr' => array('asn', 'asn name', 'view likes'),
-			'sql' =>'SELECT a.asn, a.asn_name, COUNT(*) AS requests FROM {db_prefix}wala_web_access_log wal INNER JOIN {db_prefix}wala_asns a ON (wal.asn = a.asn) WHERE request LIKE \'%action=likes%\' AND request LIKE \'%sa=view%\' GROUP BY a.asn ORDER BY requests DESC LIMIT 500',
+		'wala_rpt_likesxasn' => array(
+			'hdr' => array('asn', 'asn name', 'total view likes', 'blocked', 'unblocked'),
+			'sql' =>'SELECT a.asn, a.asn_name, COUNT(*) AS requests, COUNT(CASE WHEN status = 403 OR status = 429 THEN 1 ELSE NULL END) AS blocked, COUNT(CASE WHEN status = 403 OR status = 429 THEN NULL ELSE 1 END) AS unblocked FROM {db_prefix}wala_web_access_log wal INNER JOIN {db_prefix}wala_asns a ON (wal.asn = a.asn) WHERE request LIKE \'%action=likes%\' AND request LIKE \'%sa=view%\' GROUP BY a.asn ORDER BY requests DESC LIMIT 500',
 		),
 		'wala_rpt_userxasn' => array(
 			'hdr' => array('asn', 'asn name', 'users'),
-			'sql' =>'SELECT a.asn, a.asn_name, COUNT(*) as users FROM {db_prefix}wala_members m INNER JOIN {db_prefix}wala_asns a ON (m.asn = a.asn) GROUP BY a.asn, a.asn_name ORDER BY users DESC LIMIT 500',
+			'sql' =>'SELECT a.asn, a.asn_name, COUNT(*) AS users FROM {db_prefix}wala_members m INNER JOIN {db_prefix}wala_asns a ON (m.asn = a.asn) GROUP BY a.asn, a.asn_name ORDER BY users DESC LIMIT 500',
 		),
 		'wala_rpt_userxcountry' => array(
 			'hdr' => array('country', 'users'),
-			'sql' => 'SELECT country, COUNT(*) as users FROM {db_prefix}wala_members GROUP BY country ORDER BY users DESC LIMIT 500',
+			'sql' => 'SELECT country, COUNT(*) AS users FROM {db_prefix}wala_members GROUP BY country ORDER BY users DESC LIMIT 500',
 		),
 	);
 
