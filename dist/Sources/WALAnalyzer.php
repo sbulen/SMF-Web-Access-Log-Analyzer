@@ -1123,8 +1123,8 @@ function parseApacheDateTimeImmCached($s) {
 	static $day_cache = [];
 	static $time_cache = [];
 
-	// Expected format: 25/Oct/2025:12:34:56 +0000
-	if (strlen($s) !== 26) {
+	// Expected format: 25/Oct/2025:12:34:56+0000
+	if (strlen($s) !== 25) {
 		return false;
 	}
 
