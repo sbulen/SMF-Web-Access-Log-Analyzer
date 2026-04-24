@@ -1055,7 +1055,6 @@ function wala_load_log($filename = '') {
 	// Static caches for repeated lookups
 	static $req_cache = array();
 	static $agent_cache = array();
-	static $browser_cache = array();
 
 	while ($buffer !== false) {
 		// Uploaded from random sources????  Let's make sure we're good...
@@ -1107,7 +1106,7 @@ function wala_load_log($filename = '') {
 			$buffer[0],                                  // ip display
 			$req_cache[$request],                        // request type
 			$agent_cache[$user_agent],                   // agent
-			$browser_cache[$user_agent],                 // browser version
+			get_browser_ver($buffer[9]),				// browser version
 			$ts,                                         // dt in unix epoch format
 		);
 		$buffer = fgetcsv($fp, null, " ", "\"", "\\");
@@ -1477,12 +1476,26 @@ function get_agent($user_agent) {
  * @return string $browser_ver
  *
  */
-function get_browser_ver($user_agent) {
-	static $pattern = '/(?:(?:firefox|chrome|msie|safari|edga?|edgios|opera|vivaldi)\/\d{1,3}|mobile\/\d\d[a-z]\d\d\d\|safari\/\d{4,5})\b/i';
+function get_browser_ver($useragent) {
+	$browser_ver = '';
+	$matches = array();
 
-	if (preg_match($pattern, $user_agent, $m)) {
-		return $m[0];
-	}
+	// Gets most browser versions here...
+	static $pattern1 = '~(?:firefox|chrome|msie|safari|edg|edga|edgios|opera|vivaldi)\/\d{1,3}\b~i';
+	if (preg_match($pattern1, $useragent, $matches))
+		$browser_ver = $matches[0];
 
-	return '';
+	// Second swipe at it, lots of iphones use this
+	static $pattern2 = '~(?:mobile)\/\d\d[a-z]\d\d\d\b~i';
+	if (empty($browser_ver))
+		if (preg_match($pattern2, $useragent, $matches))
+			$browser_ver = $matches[0];
+
+	// Third swipe at it, lots of iphones use this long version of a safari version
+	static $pattern3 = '~(?:safari)\/\d{4,5}\b~i';
+	if (empty($browser_ver))
+		if (preg_match($pattern3, $useragent, $matches))
+			$browser_ver = $matches[0];
+
+	return $browser_ver;
 }
