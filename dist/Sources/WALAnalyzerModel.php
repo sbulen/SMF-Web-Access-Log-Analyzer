@@ -657,7 +657,7 @@ function get_wala_list_request() {
  */
 function set_wala_list_request($request) {
 
-	if (empty($request) || !is_string($request) || (preg_match('/[ -~]*$/', $request) !== 1))
+	if (empty($request) || !is_string($request) || (preg_match('/^[ -~]*$/', $request) !== 1))
 		$request = '';
 
 	$request = strtoupper($request);
@@ -693,7 +693,7 @@ function get_wala_list_prefix() {
 function set_wala_list_prefix($prefix) {
 
 	// Note spiffy regex for printable chars
-	if (empty($prefix) || !is_string($prefix) || (preg_match('/[ -~]*$/', $prefix) !== 1))
+	if (empty($prefix) || !is_string($prefix) || (preg_match('/^[ -~]*$/', $prefix) !== 1))
 		$prefix = '';
 
 	updateSettings(array('wala_list_prefix' => $prefix));
