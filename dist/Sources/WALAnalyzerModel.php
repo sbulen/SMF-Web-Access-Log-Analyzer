@@ -242,7 +242,7 @@ function get_asns($min_ip_packed, $max_ip_packed) {
  *
  */
 function get_asns_by_list($asns) {
-	global $smcFunc;
+	global $smcFunc, $db_type;
 
 	if (empty($asns))
 		return array();
@@ -252,7 +252,17 @@ function get_asns_by_list($asns) {
 		array('asn_list' => $asns),
 	);
 
-	$all_rows = $smcFunc['db_fetch_all']($result);
+	// Under SMF, PG & MySQL behave differently with inet types.  MySQL reads binary, but wants a display upon insert.
+	// PG always reads & writes display.
+	// WALA uses binary on reads, so needs to xlate pg on reads here.
+	$all_rows = array();
+	while ($row = $smcFunc['db_fetch_assoc']($result)) {
+		if ($db_type == 'postgresql') {
+			$row['ip_from_packed'] = inet_pton($row['ip_from_packed']);
+			$row['ip_to_packed'] = inet_pton($row['ip_to_packed']);
+		}
+		$all_rows[] = $row;
+	}
 	$smcFunc['db_free_result']($result);
 	return $all_rows;
 }
@@ -312,7 +322,7 @@ function get_countries($min_ip_packed, $max_ip_packed) {
  *
  */
 function get_countries_by_list($countries) {
-	global $smcFunc;
+	global $smcFunc, $db_type;
 
 	if (empty($countries))
 		return array();
@@ -322,7 +332,17 @@ function get_countries_by_list($countries) {
 		array('country_list' => $countries),
 	);
 
-	$all_rows = $smcFunc['db_fetch_all']($result);
+	// Under SMF, PG & MySQL behave differently with inet types.  MySQL reads binary, but wants a display upon insert.
+	// PG always reads & writes display.
+	// WALA uses binary on reads, so needs to xlate pg on reads here.
+	$all_rows = array();
+	while ($row = $smcFunc['db_fetch_assoc']($result)) {
+		if ($db_type == 'postgresql') {
+			$row['ip_from_packed'] = inet_pton($row['ip_from_packed']);
+			$row['ip_to_packed'] = inet_pton($row['ip_to_packed']);
+		}
+		$all_rows[] = $row;
+	}
 	$smcFunc['db_free_result']($result);
 	return $all_rows;
 }

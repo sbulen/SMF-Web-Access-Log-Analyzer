@@ -62,7 +62,6 @@ class CIDR
 		// No hit at all...
 		if (empty($matches))
 		{
-		    echo '*** Invalid CIDR skipped: ' . $cidr . MY_EOL;
 		    return;
 		}
 
@@ -81,7 +80,6 @@ class CIDR
 		}
 		else
 		{
-		    echo '*** Invalid CIDR prefix skipped: ' . $cidr . MY_EOL;
 			return;
 		}
 
@@ -96,7 +94,6 @@ class CIDR
 			}
 			else
 			{
-				echo '*** Invalid CIDR length skipped: ' . $cidr . MY_EOL;
 				return;
 			}
 		}
