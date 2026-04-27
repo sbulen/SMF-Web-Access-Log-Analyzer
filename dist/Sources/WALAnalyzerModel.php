@@ -2,7 +2,7 @@
 /**
  *	DB interaction for the Web Access Log Analyzer mod for SMF..
  *
- *	Copyright 2025 Shawn Bulen
+ *	Copyright 2025-2026 Shawn Bulen
  *
  *	The Web Access Log Analyzer is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -234,6 +234,30 @@ function get_asns($min_ip_packed, $max_ip_packed) {
 }
 
 /**
+ * get_asns_by_list
+ *
+ * @params array
+ *
+ * @return array result
+ *
+ */
+function get_asns_by_list($asns) {
+	global $smcFunc;
+
+	if (empty($asns))
+		return array();
+
+	$sql = 'SELECT ip_from_packed, ip_to_packed FROM {db_prefix}wala_dbip_asn WHERE asn IN ({array_string:asn_list})';
+	$result = $smcFunc['db_query']('', $sql,
+		array('asn_list' => $asns),
+	);
+
+	$all_rows = $smcFunc['db_fetch_all']($result);
+	$smcFunc['db_free_result']($result);
+	return $all_rows;
+}
+
+/**
  * get_countries
  *
  * @params inet min IP
@@ -276,6 +300,30 @@ function get_countries($min_ip_packed, $max_ip_packed) {
 		}
 		$all_rows[] = $row;
 	}
+	return $all_rows;
+}
+
+/**
+ * get_countries_by_list
+ *
+ * @params array
+ *
+ * @return array result
+ *
+ */
+function get_countries_by_list($countries) {
+	global $smcFunc;
+
+	if (empty($countries))
+		return array();
+
+	$sql = 'SELECT ip_from_packed, ip_to_packed FROM {db_prefix}wala_dbip_country WHERE country IN ({array_string:country_list})';
+	$result = $smcFunc['db_query']('', $sql,
+		array('country_list' => $countries),
+	);
+
+	$all_rows = $smcFunc['db_fetch_all']($result);
+	$smcFunc['db_free_result']($result);
 	return $all_rows;
 }
 
@@ -560,4 +608,73 @@ function update_web_access_log($log_info) {
 
 	$sql = 'UPDATE {db_prefix}wala_web_access_log SET asn = \'' . $log_info['asn'] . '\', country = \'' . $log_info['country'] . '\', username = \'' . $log_info['username'] . '\' WHERE id_entry = ' . $log_info['id_entry'];
 	$result = $smcFunc['db_query']('', $sql);
+}
+
+/**
+ * get_wala_list_request
+ *
+ * @return string
+ *
+ */
+function get_wala_list_request() {
+	global $modSettings;
+
+	$request = '';
+
+	if (!empty($modSettings['wala_list_request']))
+		$request = $modSettings['wala_list_request'];
+
+	return $request;
+}
+
+/**
+ * set_wala_list_request
+ *
+ * @params string $request
+ *
+ * @return null
+ *
+ */
+function set_wala_list_request($request) {
+
+	if (empty($request) || !is_string($request) || (preg_match('/[ -~]*$/', $request) !== 1))
+		$request = '';
+
+	$request = strtoupper($request);
+
+	updateSettings(array('wala_list_request' => $request));
+}
+
+/**
+ * get_wala_list_prefix
+ *
+ * @return string
+ *
+ */
+function get_wala_list_prefix() {
+	global $modSettings;
+
+	$prefix = '';
+
+	if (!empty($modSettings['wala_list_prefix']))
+		$prefix = $modSettings['wala_list_prefix'];
+
+	return $prefix;
+}
+
+/**
+ * set_wala_list_prefix
+ *
+ * @params string $prefix
+ *
+ * @return null
+ *
+ */
+function set_wala_list_prefix($prefix) {
+
+	// Note spiffy regex for printable chars
+	if (empty($prefix) || !is_string($prefix) || (preg_match('/[ -~]*$/', $prefix) !== 1))
+		$prefix = '';
+
+	updateSettings(array('wala_list_prefix' => $prefix));
 }

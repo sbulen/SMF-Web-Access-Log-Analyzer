@@ -2,7 +2,7 @@
 /**
  *	Template for admin functions for the Web Access Log Analyzer mod for SMF.
  *
- *	Copyright 2025 Shawn Bulen
+ *	Copyright 2025-2026 Shawn Bulen
  *
  *	The Web Access Log Analyzer is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -167,4 +167,29 @@ function template_wala_report_contents()
 	}
 	echo '
 	</div>';
+}
+
+/**
+ * A page to run WALA CIDR list generation & download the contents.
+ */
+function template_wala_download()
+{
+	global $context, $scripturl, $txt;
+
+	echo '
+		<form action="', $scripturl, '?action=admin;area=wala;sa=download" method="post" accept-charset="', $context['character_set'], '">
+			<div class="cat_bar">
+				<h3 class="catbg">', $txt['wala_download'], '
+				</h3>
+			</div>
+			<div class="windowbg">
+				<fieldset>
+					<label for="wala_download_request">' . $txt['wala_download_request'] . ':<textarea name="wala_download_request" id="wala_download_request">' . ($context['wala_download_request'] ?? '') . '</textarea></label><br>
+					<label for="wala_download_prefix">' . $txt['wala_download_prefix'] . ':<input type="text" name="wala_download_prefix" id="wala_download_prefix" value="' . ($context['wala_download_prefix'] ?? '') . '"></label>
+					<input type="submit" name="wala_download_submit" value="' . $txt['wala_submit'] . '" class="button" onclick="this.disabled = true;form.submit();">
+					<input type="hidden" name="', $context['wala_dl_token_var'], '" value="', $context['wala_dl_token'], '">
+					<input type="hidden" name="', $context['session_var'], '" value="', $context['session_id'], '">
+				</fieldset>
+			</div>
+		</form>';
 }

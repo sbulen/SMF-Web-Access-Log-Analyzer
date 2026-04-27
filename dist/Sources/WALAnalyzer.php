@@ -2,7 +2,7 @@
 /**
  *	Main logic for the Web Access Log Analyzer mod for SMF..
  *
- *	Copyright 2025 Shawn Bulen
+ *	Copyright 2025-2026 Shawn Bulen
  *
  *	The Web Access Log Analyzer is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -46,16 +46,15 @@ function wala_main() {
 	loadLanguage('WALAnalyzer');
 	loadCSSFile('walanalyzer.css');
 
-	// Setup the template stuff we'll need.
-	loadTemplate('WALAnalyzerMaint');
-
-	// Everyone needs this...
+	// Everyone needs these...
 	require_once($sourcedir . '/WALAnalyzerModel.php');
+	require_once($sourcedir . '/ManageServer.php');
 
 	// Sub actions...
 	$subActions = array(
 		'load' => 'wala_load',
 		'reports' => 'wala_reports',
+		'download' => 'wala_download',
 	);
 
 	// Pick the correct sub-action.
@@ -66,14 +65,19 @@ function wala_main() {
 
 	$_REQUEST['sa'] = $context['sub_action'];
 
+	// Setup the template stuff we'll need.
+	loadTemplate('WALAnalyzerMaint');
+
 	// This uses admin tabs
 	$context[$context['admin_menu_name']]['tab_data']['title'] = $txt['wala_title'];
 
-	// Use the short description when viewing reports...
-	if ($context['sub_action'] == 'load')
-		$context[$context['admin_menu_name']]['tab_data']['description'] = $txt['wala_desc'];
+	// Use the appropriate description...
+	if ($context['sub_action'] == 'download')
+		$context[$context['admin_menu_name']]['tab_data']['description'] = $txt['wala_desc_download'];
+	elseif ($context['sub_action'] == 'load')
+		$context[$context['admin_menu_name']]['tab_data']['description'] = $txt['wala_desc_load'];
 	else
-		$context[$context['admin_menu_name']]['tab_data']['description'] = $txt['wala_desc_short'];
+		$context[$context['admin_menu_name']]['tab_data']['description'] = $txt['wala_desc_reports'];
 
 	// Set the page title
 	$context['page_title'] = $txt['wala_title'];
@@ -251,6 +255,54 @@ function wala_reports() {
 	$context['url_start'] = '?action=admin;area=wala;sa=reports';
 	$context['page_title'] = $txt['wala_reports'];
 	$context['sub_template'] = 'wala_reports';
+}
+
+/**
+ * wala_download - page to let you generate .htaccess entries
+ *
+ * Action: admin
+ * Area: wala
+ * Subaction: download
+ *
+ * @return null
+ *
+ */
+function wala_download() {
+	global $txt, $context, $sourcedir, $scripturl, $modSettings;
+
+	// You have to be able to admin the forum to do this.
+	isAllowedTo('admin_forum');
+
+	// Download request?
+	if (!empty($_POST)) {
+		// Confirm they're OK being here...
+		checkSession('post');
+		validateToken('wala_dl', 'post');
+
+		// Make sure it's a valid request...
+		$cleaned_request = clean_request($_POST['wala_download_request']);
+		$cleaned_prefix = clean_prefix($_POST['wala_download_prefix']);
+		if ($cleaned_request !== false && $cleaned_prefix !== false) {
+			set_wala_list_request($cleaned_request);
+			set_wala_list_prefix($cleaned_prefix);
+			$context['wala_download_request'] = $cleaned_request;
+			$context['wala_download_prefix'] = $cleaned_prefix;
+			generate_download($cleaned_request, $cleaned_prefix);
+		} else {
+			fatal_lang_error($txt['wala_invalid_request'], false);
+		}
+	} else {
+		// Load up context with any previously saved request data
+		$context['wala_download_request'] = get_wala_list_request();
+		$context['wala_download_prefix'] = get_wala_list_prefix();
+	}
+
+	createToken('wala_dl');
+
+	// Set up some basics....
+	$context['url_start'] = '?action=admin;area=wala;sa=download';
+	$context['page_title'] = $txt['wala_download'];
+	$context['sub_template'] = 'wala_download';
 }
 
 /**
@@ -1093,22 +1145,22 @@ function wala_load_log($filename = '') {
 
 		$inserts[] = array(
 			// The first fields are common when the apache standard logfile is used; ignore the others in the csv, as they vary a lot
-			$buffer[0],                                  // ip packed
-			$smcFunc['htmlspecialchars']($buffer[1]),    // client (usually unused)
-			$smcFunc['htmlspecialchars']($buffer[2]),    // requestor (usually unused)
-			substr($buffer[3], 1),                       // date timestamp, strip the [
-			substr($buffer[4], 0, -1),                   // tz, strip the ]
-			$smcFunc['htmlspecialchars']($buffer[5]),    // request
-			(int) $buffer[6],                            // status
-			(int) $buffer[7],                            // size
-			$smcFunc['htmlspecialchars']($buffer[8]),    // referrer
-			$smcFunc['htmlspecialchars']($buffer[9]),    // useragent
+			$buffer[0],									// ip packed
+			$smcFunc['htmlspecialchars']($buffer[1]),	// client (usually unused)
+			$smcFunc['htmlspecialchars']($buffer[2]),	// requestor (usually unused)
+			substr($buffer[3], 1),						// date timestamp, strip the [
+			substr($buffer[4], 0, -1),					// tz, strip the ]
+			$smcFunc['htmlspecialchars']($buffer[5]),	// request
+			(int) $buffer[6],							// status
+			(int) $buffer[7],							// size
+			$smcFunc['htmlspecialchars']($buffer[8]),	// referrer
+			$smcFunc['htmlspecialchars']($buffer[9]),	// useragent
 			// These fields are calc'd here...
-			$buffer[0],                                  // ip display
-			$req_cache[$request],                        // request type
-			$agent_cache[$user_agent],                   // agent
-			$browser_cache[$user_agent],                 // browser version
-			$ts,                                         // dt in unix epoch format
+			$buffer[0],									// ip display
+			$req_cache[$request],						// request type
+			$agent_cache[$user_agent],					// agent
+			$browser_cache[$user_agent],				// browser version
+			$ts,										// dt in unix epoch format
 		);
 		$buffer = fgetcsv($fp, null, " ", "\"", "\\");
 	}
@@ -1130,11 +1182,11 @@ function parseApacheDateTimeImmCached($s) {
 	}
 
 	// Using fixed string offsets here is much faster than a regex
-	$day_str = substr($s, 0, 11);   // "25/Oct/2025"
-	$h = substr($s, 12, 2);         // "12"
-	$i = substr($s, 15, 2);         // "34"
-	$sec = substr($s, 18, 2);       // "56"
-	$tz = substr($s, 20, 5);        // "+0000"
+	$day_str = substr($s, 0, 11);	// "25/Oct/2025"
+	$h = substr($s, 12, 2);			// "12"
+	$i = substr($s, 15, 2);			// "34"
+	$sec = substr($s, 18, 2);		// "56"
+	$tz = substr($s, 20, 5);		// "+0000"
 
 	$day_key = $day_str . $tz;
 	$time_key = $h * 3600 + $i * 60 + $sec;
@@ -1340,57 +1392,53 @@ function get_username($ip_packed) {
  */
 function get_request_type($request) {
 	static $map = array(
-		'area=alerts_popup'      => 'Alerts',
-		'type=rss'               => 'RSS',
-		'action=admin'           => 'Admin',
-		'action=keepalive'       => 'Keepalive',
-		'action=printpage'       => 'Print',
-		'action=recent'          => 'Recent',
-		'action=unread'          => 'Unread',
-		'action=likes'           => 'Likes',
-		'action=dlattach'        => 'Attach',
-		'action=quotefast'       => 'Quote',
-		'action=markasread'      => 'MarkRead',
-		'action=quickmod2'       => 'Modify',
-		'action=profile'         => 'Profile',
-		'action=pm'              => 'PM',
-		'action=xml'             => 'xml',
-		'action=.xml'            => 'xml',
-		'action=attbr'           => 'Attachment Browser',
-		'action=search'          => 'Search',
-		'action=signup'          => 'Signup',
-		'action=register'        => 'Signup',
-		'action=join'            => 'Signup',
-		'action=login'           => 'Login',
-		'action=logout'          => 'Logout',
-		'action=verificationcode'=> 'Login',
-		'.msg'                   => 'Message',
-		'msg='                   => 'Message',
-		'topic='                 => 'Topic',
-		'board='                 => 'Board',
-		';wwwRedirect'           => 'Redirect',
-		'/smf/custom_avatar'     => 'Avatar',
-		'/smf/cron.php?ts='      => 'Cron',
-		'/smf/index.php '        => 'Board Index',
-		'/smf/proxy.php'         => 'Proxy',
-		'/smf/avatars'           => 'Avatar',
-		'/smf/Smileys'           => 'Smileys',
-		'/smf/Themes'            => 'Theme',
-		'/favicon.ico'           => 'Favicon',
-		'/robots.txt'            => 'robots.txt',
-		'/sitemap'               => 'Sitemap',
-		'/phpmyadmin'            => 'Admin',
-		'/admin'                 => 'Admin',
+		'area=alerts_popup' => 'Alerts',
+		'type=rss' => 'RSS',
+		'action=admin' => 'Admin',
+		'action=keepalive' => 'Keepalive',
+		'action=printpage' => 'Print',
+		'action=recent' => 'Recent',
+		'action=unread' => 'Unread',
+		'action=likes' => 'Likes',
+		'action=dlattach' => 'Attach',
+		'action=quotefast' => 'Quote',
+		'action=markasread' => 'MarkRead',
+		'action=quickmod2' => 'Modify',
+		'action=profile' => 'Profile',
+		'action=pm' => 'PM',
+		'action=xml' => 'xml',
+		'action=.xml' => 'xml',
+		'action=attbr' => 'Attachment Browser',
+		'action=search' => 'Search',
+		'action=signup' => 'Signup',
+		'action=register' => 'Signup',
+		'action=join' => 'Signup',
+		'action=login' => 'Login',
+		'action=logout' => 'Logout',
+		'action=verificationcode' => 'Login',
+		'.msg' => 'Message',
+		'msg=' => 'Message',
+		'topic=' => 'Topic',
+		'board=' => 'Board',
+		';wwwRedirect' => 'Redirect',
+		'/smf/custom_avatar' => 'Avatar',
+		'/smf/cron.php?ts=' => 'Cron',
+		'/smf/index.php ' => 'Board Index',
+		'/smf/proxy.php' => 'Proxy',
+		'/smf/avatars' => 'Avatar',
+		'/smf/Smileys' => 'Smileys',
+		'/smf/Themes' => 'Theme',
+		'/favicon.ico' => 'Favicon',
+		'/robots.txt' => 'robots.txt',
+		'/sitemap' => 'Sitemap',
+		'/phpmyadmin' => 'Admin',
+		'/admin' => 'Admin',
 	);
 
 	static $regex = null;
 	if ($regex === null) {
-		$regex = $GLOBALS['modSettings']['wala_request_type_regex'] ?? null;
-	}
-	if ($regex === null) {
 		// Build one giant alternation regex
 		$regex = '/' . build_regex(array_keys($map), '/') . '/i';
-		updateSettings(['wala_request_type_regex' =>  $regex]);
 	}
 
 	if (preg_match($regex, $request, $m)) {
@@ -1447,12 +1495,8 @@ function get_agent($user_agent) {
 
 	static $regex = null;
 	if ($regex === null) {
-		$regex = $GLOBALS['modSettings']['wala_user_agent_regex'] ?? null;
-	}
-	if ($regex === null) {
 		// Build one giant alternation regex
 		$regex = '/' . build_regex(array_keys($map), '/') . '/i';
-		updateSettings(['wala_user_agent_regex' =>  $regex]);
 	}
 
 	if (preg_match($regex, $ua, $m)) {
@@ -1485,4 +1529,153 @@ function get_browser_ver($user_agent) {
 	}
 
 	return '';
+}
+
+/**
+ * clean_request - clean up download request
+ *
+ * Action: na - helper function
+ *
+ * @params string $request
+ *
+ * @return string $request | false if invalid
+ *
+ */
+function clean_request($request) {
+
+	if (!is_string($request))
+		return false;
+
+	// To let folks null it out...
+	if (empty($request))
+		return '';
+
+	$request = strtoupper($request);
+
+	// Make sure all the elements requested look valid
+	$countries = array();
+	$asns = array();
+	$split = explode(',', $request);
+	foreach ($split as $entry) {
+		$entry = trim($entry);
+		if (preg_match('~^[A-Z]{2}$~', $entry) === 1) {
+			$countries[] = $entry;
+		} elseif (preg_match('~^\d{1,6}$~', $entry) === 1) {
+			$asns[] = (int) $entry;
+		} else {
+			return false;
+		}
+	}
+	$request = array_merge($countries, $asns);
+	$request = implode(', ', $request);
+	return $request;
+}
+
+/**
+ * clean_prefix - clean up download prefix
+ *
+ * Action: na - helper function
+ *
+ * @params string $prefix
+ *
+ * @return string $prefix | false if invalid
+ *
+ */
+function clean_prefix($prefix) {
+
+	// Note spiffy regex for printable chars
+	if (!is_string($prefix) || (preg_match('/^[ -~]*$/', $prefix) !== 1))
+		return false;
+
+	return trim($prefix);
+}
+
+/**
+ * generate_download - look up CIDRs & generate download file per request
+ *
+ * Action: na - helper function
+ *
+ * @params string $request
+ * @params string $prefix
+ *
+ * @return null
+ *
+ */
+function generate_download($request, $prefix) {
+
+	global $cachedir, $sourcedir; 
+
+	// This allows them to clear out the strings
+	if (empty($request))
+		return;
+
+	$request = strtoupper($request);
+
+	// Split out contries & ASNs, different queries
+	$countries = array();
+	$asns = array();
+	$split = explode(',', $request);
+	foreach ($split as $entry) {
+		$entry = trim($entry);
+		if (preg_match('~^[A-Z]{2}$~', $entry) === 1) {
+			$countries[] = $entry;
+		} elseif (preg_match('~^\d{1,6}$~', $entry) === 1) {
+			$asns[] = (int) $entry;
+		}
+	}
+
+	// Gonna need a temp file & the final text file...
+	$temp_pfx = $cachedir . '/wala/WALA_cidr_list_' . date("YmdHis");
+	$temp_file = $temp_pfx . '.tmp';
+	$download_file = $temp_pfx . '.txt';
+
+	// Gonna need these, too...
+	require_once($sourcedir . '/Class-CIDR.php');
+	require_once($sourcedir . '/Class-CIDR_list.php');
+	require_once($sourcedir . '/Class-Packed.php');
+
+	// Get the CIDRs, send to temp file, first by asn
+	$fptmp = fopen($temp_file, 'w');
+	$asn_ranges = get_asns_by_list($asns);
+	foreach ($asn_ranges AS $range) {
+		$cidrs = CIDR::Build($range['ip_from_packed'], $range['ip_to_packed'], strlen($range['ip_from_packed']) * 8);
+		foreach ($cidrs AS $cidr) {
+			fwrite($fptmp, $cidr . "\n");
+		}
+	}
+	unset($asn_ranges);
+
+	// Now the countries
+	$country_ranges = get_countries_by_list($countries);
+	foreach ($country_ranges AS $range) {
+		$cidrs = CIDR::Build($range['ip_from_packed'], $range['ip_to_packed'], strlen($range['ip_from_packed']) * 8);
+		foreach ($cidrs AS $cidr) {
+			fwrite($fptmp, $cidr . "\n");
+		}
+	}
+	unset($country_ranges);
+	fclose($fptmp);
+
+	// Create the file for download - clean up all the CIDRs and produce the most efficient list possible
+	$cidr_list = new CIDR_list($temp_file, $prefix);
+	@unlink($temp_file);
+
+	// Start off with a descriptive header, then write it
+	$fpdl = fopen($download_file, 'w');
+	fwrite($fpdl, '# ' . date("m/d/Y") . ' - request: ' . $request . "\n");
+	fclose($fpdl);
+	$cidr_list->write($download_file);
+
+	// Download the file
+	header('Content-Description: File Transfer');
+	header('Content-Type: text/plain');
+	header('Content-Disposition: attachment; filename="' . basename($download_file) . '"');
+	header('Content-Length: ' . filesize($download_file));
+	ob_clean();
+	flush();
+	readfile($download_file);
+
+	// Cleanup...
+	@unlink($download_file);
+	exit;
 }

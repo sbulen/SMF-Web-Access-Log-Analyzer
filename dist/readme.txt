@@ -29,6 +29,7 @@ A special thanks to @live627 for excellent input on performance & how to speed t
  - The javascript Fetch api is used to handle fast file transfers, even for very large files.
  - For speed of processing, there is also a simple btree used for lookups during loading.
  - Input files may be either .csv or .gzipped .csv, as typically downloaded.
+ - Lists of CIDRs may be generated, to help customize your blocks in .htaccess.
 
 [b]Limitations:[/b]
  - https is a hard requirement, due to the use of the fetch api.
@@ -44,3 +45,4 @@ A special thanks to @live627 for excellent input on performance & how to speed t
  - v1.0.3 Improve upload & import speed
  - v1.0.4 Tighten up some validations
  - v1.0.5 Simplify & consolidate reports
+ - v1.0.6 Add ability to generate CIDR lists

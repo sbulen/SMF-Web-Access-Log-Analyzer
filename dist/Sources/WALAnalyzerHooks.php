@@ -2,7 +2,7 @@
 /**
  *	Logic for the Web Access Log Analyzer mod hooks.
  *
- *	Copyright 2025 Shawn Bulen
+ *	Copyright 2025-2026 Shawn Bulen
  *
  *	The Web Access Log Analyzer is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ function wala_admin_menu(&$menu)
 		'subsections' => array(
 			'load' => array($txt['wala_load']),
 		    'reports' => array($txt['wala_reports']),
+		    'download' => array($txt['wala_download']),
 		),
 	);
 }

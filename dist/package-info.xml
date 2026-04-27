@@ -3,7 +3,7 @@
 <package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
 	<name>Web Access Log Analyzer</name>
 	<id>shawnb61:WALAnalyzer</id>
-	<version>1.0.5</version>
+	<version>1.0.6</version>
 	<type>modification</type>
 	<install for="2.1.6-2.1.99">
 		<readme type="file" parsebbc="true">readme.txt</readme>
@@ -24,6 +24,9 @@
 		<remove-file name="$sourcedir/WALAnalyzer.php" />
 		<remove-file name="$sourcedir/WALAnalyzerHooks.php" />
 		<remove-file name="$sourcedir/WALAnalyzerModel.php" />
+		<remove-file name="$sourcedir/Class-CIDR.php" />
+		<remove-file name="$sourcedir/Class-CIDR_list.php" />
+		<remove-file name="$sourcedir/Class-Packed.php" />
 		<remove-file name="$themedir/WALAnalyzerMaint.template.php" />
 		<remove-file name="$themedir/css/walanalyzer.css" />
 		<remove-file name="$themedir/scripts/wala_file_xfers.js" />

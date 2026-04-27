@@ -35,6 +35,22 @@
 	align-self: flex-end;
 }
 
+#wala_download_request {
+	display: block;
+	width: 75%;
+	height: 7em;
+	overflow-wrap: anywhere;
+	padding: 0 7px 0 7px;
+	margin: 0 7px 0 7px;
+}
+
+#wala_download_prefix {
+	display: block;
+	width: 25%;
+	padding: 0 7px 0 7px;
+	margin: 0 7px 0 7px;
+}
+
 .wala_table {
 	display: table;
 	width: auto;
