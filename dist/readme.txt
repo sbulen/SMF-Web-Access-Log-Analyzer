@@ -46,3 +46,4 @@ A special thanks to @live627 for excellent input on performance & how to speed t
  - v1.0.4 Tighten up some validations
  - v1.0.5 Simplify & consolidate reports
  - v1.0.6 Add ability to generate CIDR lists
+ - v1.0.7 Minor tweaks
