@@ -1258,10 +1258,10 @@ function get_asn($ip_packed) {
 	$ip_hex = bin2hex($ip_packed);
 	$asn =  '';
 	foreach($asn_cache AS $ip_to => $layer2) {
-		if (($ip_hex <= $ip_to) && (strlen($ip_hex) == strlen($ip_to))) {
+		if ((strcmp($ip_hex, $ip_to) < 1) && (strlen($ip_hex) == strlen($ip_to))) {
 			foreach($layer2 AS $ip_to2 => $data) {
-				if (($ip_hex <= $ip_to2) && (strlen($ip_hex) == strlen($ip_to2))) {
-					if ($ip_hex >= $data['ip_from_packed'])
+				if ((strcmp($ip_hex, $ip_to2) < 1) && (strlen($ip_hex) == strlen($ip_to2))) {
+					if (strcmp($ip_hex, $data['ip_from_packed']) > -1)
 						$asn = $data['asn'];
 					break 2;
 				}
@@ -1323,10 +1323,10 @@ function get_country($ip_packed) {
 	$ip_hex = bin2hex($ip_packed);
 	$country =  '';
 	foreach($country_cache AS $ip_to => $layer2) {
-		if (($ip_hex <= $ip_to) && (strlen($ip_hex) == strlen($ip_to))) {
+		if ((strcmp($ip_hex, $ip_to) < 1) && (strlen($ip_hex) == strlen($ip_to))) {
 			foreach($layer2 AS $ip_to2 => $data) {
-				if (($ip_hex <= $ip_to2) && (strlen($ip_hex) == strlen($ip_to2))) {
-					if ($ip_hex >= $data['ip_from_packed'])
+				if ((strcmp($ip_hex, $ip_to2) < 1) && (strlen($ip_hex) == strlen($ip_to2))) {
+					if (strcmp($ip_hex, $data['ip_from_packed']) > -1)
 						$country = $data['country'];
 					break 2;
 				}
